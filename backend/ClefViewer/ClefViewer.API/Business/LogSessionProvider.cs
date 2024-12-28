@@ -27,7 +27,7 @@ public class LogSessionProvider : ILogSessionProvider
     public SearchLogEventsResponse GetEvents(Guid sessionId, SearchLogEventsRequest request)
     {
         var (pageNumber, pageSize) = request;
-        var entries = GetSession(sessionId).Files.SelectMany(x => x.Entries);
+        var entries = GetSession(sessionId).Files.SelectMany(x => x.Entries).OrderByDescending(x => x.Timestamp);
         return new SearchLogEventsResponse(entries.Skip(pageNumber * pageSize).Take(pageSize).ToArray(), entries.Count());
     }
 }

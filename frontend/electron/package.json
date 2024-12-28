@@ -23,6 +23,7 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.0",
     "@electron-toolkit/utils": "^3.0.0",
+    "@vueuse/core": "^12.2.0",
     "electron-updater": "^6.1.7"
   },
   "devDependencies": {
@@ -43,12 +44,13 @@
     "eslint-plugin-vue": "^9.26.0",
     "pinia": "^2.3.0",
     "prettier": "^3.3.2",
+    "sass-embedded": "^1.83.0",
     "typescript": "^5.5.2",
     "vite": "^6.0.3",
     "vite-plugin-vuetify": "^2.0.4",
     "vue": "^3.5.13",
-    "vue-tsc": "^2.1.10",
     "vue-router": "^4.5.0",
+    "vue-tsc": "^2.1.10",
     "vuetify": "^3.7.5"
   }
 }

@@ -1,3 +1,5 @@
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Serilog.Events;
 using Serilog.Formatting.Compact.Reader;
 
@@ -12,10 +14,14 @@ public sealed record LogFile(string Path, long Size, List<LogFileEntry> Entries)
 
 public sealed class LogFileEntry(LogEvent logEvent)
 {
+    private string? _message;
+    private string? _exception;
+
+    [JsonConverter(typeof(StringEnumConverter))]
     public LogEventLevel Level => logEvent.Level;
-    public string Message => logEvent.RenderMessage();
+    public string Message => _message ??= logEvent.RenderMessage();
     public string MessageTemplate => logEvent.MessageTemplate.Text;
-    public string? Exception => logEvent.Exception?.ToString();
+    public string? Exception => _exception ??= logEvent.Exception?.ToString();
     public DateTimeOffset Timestamp => logEvent.Timestamp;
     public IReadOnlyDictionary<string, LogEventPropertyValue> Properties => logEvent.Properties;
 }

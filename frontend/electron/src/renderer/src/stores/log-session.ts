@@ -2,6 +2,11 @@ import axios from 'axios';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 
+export type EventProperties = Record<
+    string,
+    { value: unknown } | { properties: { name: string; value: { value: unknown } }[] }
+>;
+
 export interface SearchLogEventsRequest {
     pageNumber: number;
     pageSize: number;
@@ -9,11 +14,12 @@ export interface SearchLogEventsRequest {
 }
 
 export interface LogEvent {
-    level: number;
+    level: string;
     message: string;
     messageTemplate: string;
     exception: string | null;
     timestamp: string;
+    properties: EventProperties;
 }
 
 export interface LogEntriesResponse {
