@@ -26,9 +26,11 @@ const logLevelCounts = computed(() => {
         });
 });
 const messageTemplates = computed(() =>
-    Object.fromEntries(
-        Object.entries(counts.value.messageTemplates).sort((a, b) => (a[1] < b[1] ? 1 : -1)),
-    ),
+    Object.entries(counts.value.messageTemplates)
+        .sort((a, b) => (a[1] < b[1] ? 1 : -1))
+        .map((x) => {
+            return { template: x[0], count: x[1] };
+        }),
 );
 const messageTemplateCount = computed(() => Object.entries(messageTemplates.value).length);
 const errorLikeCount = computed(() => counts.value.fatal + counts.value.error);
@@ -42,7 +44,7 @@ const isExpanded = ref(false);
                 {{ messageTemplateCount }} message templates.</span
             >
             <v-icon @click="isExpanded = !isExpanded">{{
-                isExpanded ? 'mdi-minus' : 'mdi-plus'
+                isExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down'
             }}</v-icon>
         </v-col>
     </v-row>
@@ -64,9 +66,9 @@ const isExpanded = ref(false);
             <h2>Message templates</h2>
             <v-table class="message-templates">
                 <tbody>
-                    <tr v-for="(value, template, index) of messageTemplates" :key="index">
-                        <td>{{ template }}</td>
-                        <td>{{ value }}</td>
+                    <tr v-for="(entry, index) of messageTemplates" :key="index">
+                        <td>{{ entry.template }}</td>
+                        <td>{{ entry.count }}</td>
                     </tr>
                 </tbody>
             </v-table>
