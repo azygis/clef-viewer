@@ -1,5 +1,5 @@
 import { electronApp, is, optimizer } from '@electron-toolkit/utils';
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, shell } from 'electron';
 import { join } from 'path';
 import icon from '../../resources/icon.png?asset';
 import { startEventListeners } from './events';
@@ -19,7 +19,6 @@ function createWindow(): void {
     });
 
     mainWindow.on('ready-to-show', () => mainWindow.show());
-    mainWindow.on('show', startEventListeners);
 
     mainWindow.webContents.setWindowOpenHandler((details) => {
         shell.openExternal(details.url);
@@ -49,8 +48,7 @@ app.whenReady().then(() => {
         optimizer.watchWindowShortcuts(window);
     });
 
-    // IPC test
-    ipcMain.on('ping', () => console.log('pong'));
+    startEventListeners();
 
     createWindow();
 

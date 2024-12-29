@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import EventCounts from '@/components/EventCounts.vue';
+import EventLevelChip from '@/components/EventLevelChip.vue';
 import EventPropertyTable from '@/components/EventPropertyTable.vue';
 import EventsViewSettings from '@/components/EventsViewSettings.vue';
 import { useExecutingState } from '@/composables/useExecutingState';
@@ -8,27 +10,31 @@ import { formatDate, normalizeDate } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { reactive, ref, watch } from 'vue';
 
-const { dateFormatString, messageTextLimit } = storeToRefs(useEventViewerStore());
+const { dateFormatString, messageTextLimit, searchExpression } = storeToRefs(useEventViewerStore());
 const sessionStore = useLogSessionStore();
 const { events, totalEvents } = storeToRefs(sessionStore);
 const { isExecuting: isLoading, execute: executeLoad } = useExecutingState(true);
 const searchRequest = reactive<SearchLogEventsRequest>({
     pageNumber: 1,
     pageSize: 50,
+    sortOrder: 'desc',
 });
-watch(
-    searchRequest,
-    (request) => {
-        executeLoad(() => sessionStore.loadEvents(request));
-    },
-    { immediate: true },
-);
+watch(searchExpression, (expression) => (searchRequest.expression = expression));
+watch(searchRequest, (request) => executeLoad(() => sessionStore.loadEvents(request)), {
+    immediate: true,
+});
 
-const expanded = ref();
+const expanded = ref<string[]>();
 
-function changeOptions({ page, itemsPerPage }: { page: number; itemsPerPage: number }) {
+function changeOptions(input: {
+    page: number;
+    itemsPerPage: number;
+    sortBy: { order: 'asc' | 'desc' }[];
+}) {
+    const { page, itemsPerPage, sortBy } = input;
     searchRequest.pageNumber = page;
     searchRequest.pageSize = itemsPerPage;
+    searchRequest.sortOrder = sortBy[0].order;
 }
 
 function formatTimestamp(item: LogEvent) {
@@ -49,6 +55,7 @@ function formatMessage(item: LogEvent) {
 <template>
     <v-container fluid>
         <EventsViewSettings />
+        <EventCounts />
         <v-row>
             <v-col>
                 <v-data-table-server
@@ -57,6 +64,7 @@ function formatMessage(item: LogEvent) {
                         {
                             title: 'Timestamp',
                             value: 'timestamp',
+                            sortable: true,
                         },
                         {
                             title: 'Level',
@@ -67,9 +75,10 @@ function formatMessage(item: LogEvent) {
                             value: 'message',
                         },
                     ]"
+                    :sort-by="[{ key: 'timestamp', order: searchRequest.sortOrder }]"
                     :page="searchRequest.pageNumber"
                     :items-per-page="searchRequest.pageSize"
-                    :items-per-page-options="[10, 25, 50, 100, 250]"
+                    :items-per-page-options="[10, 25, 50, 100, 250, 500]"
                     :items-length="totalEvents"
                     :items="events"
                     :loading="isLoading"
@@ -80,6 +89,9 @@ function formatMessage(item: LogEvent) {
                 >
                     <template #[`item.timestamp`]="{ item }">
                         <span>{{ formatTimestamp(item) }}</span>
+                    </template>
+                    <template #[`item.level`]="{ item }">
+                        <EventLevelChip :level="item.level" />
                     </template>
                     <template #[`item.message`]="{ item }">
                         <span>{{ formatMessage(item) }}</span>

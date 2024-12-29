@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { LogEvent } from '@/stores/log-session';
+import EventLevelChip from './EventLevelChip.vue';
 
 defineProps<{
     item: LogEvent;
@@ -8,6 +9,10 @@ defineProps<{
 <template>
     <v-table density="compact">
         <tbody>
+            <tr>
+                <td>Level</td>
+                <td><EventLevelChip :level="item.level" /></td>
+            </tr>
             <tr>
                 <td>Timestamp</td>
                 <td>{{ item.timestamp }}</td>

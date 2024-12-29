@@ -17,6 +17,9 @@ public sealed class LogFileEntry(LogEvent logEvent)
     private string? _message;
     private string? _exception;
 
+    [JsonIgnore]
+    public LogEvent Event => logEvent;
+
     [JsonConverter(typeof(StringEnumConverter))]
     public LogEventLevel Level => logEvent.Level;
     public string Message => _message ??= logEvent.RenderMessage();

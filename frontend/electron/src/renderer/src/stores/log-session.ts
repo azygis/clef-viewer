@@ -10,7 +10,8 @@ export type EventProperties = Record<
 export interface SearchLogEventsRequest {
     pageNumber: number;
     pageSize: number;
-    search?: string;
+    sortOrder: 'asc' | 'desc';
+    expression?: string | null;
 }
 
 export interface LogEvent {
@@ -22,15 +23,27 @@ export interface LogEvent {
     properties: EventProperties;
 }
 
+export interface LogEntryCounts {
+    total: number;
+    debug: number;
+    error: number;
+    fatal: number;
+    info: number;
+    verbose: number;
+    warning: number;
+    messageTemplates: Record<string, number>;
+}
+
 export interface LogEntriesResponse {
-    totalEvents: number;
+    counts: LogEntryCounts;
     events: LogEvent[];
 }
 
 export const useLogSessionStore = defineStore('log-session', () => {
     const sessionId = ref<string>(undefined!);
     const events = ref<LogEvent[]>([]);
-    const totalEvents = ref<number>(0);
+    const counts = ref<LogEntryCounts>();
+    const totalEvents = computed(() => counts.value?.total ?? 0);
     const hasActiveSession = computed(() => !!sessionId.value);
 
     function setId(id: string) {
@@ -42,8 +55,8 @@ export const useLogSessionStore = defineStore('log-session', () => {
             await axios.post<LogEntriesResponse>(`log-sessions/${sessionId.value}`, request)
         ).data;
         events.value = response.events;
-        totalEvents.value = response.totalEvents;
+        counts.value = response.counts;
     }
 
-    return { sessionId, hasActiveSession, events, totalEvents, setId, loadEvents };
+    return { sessionId, hasActiveSession, events, totalEvents, counts, setId, loadEvents };
 });
