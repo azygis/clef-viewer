@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { useEventViewerStore } from '@/stores/event-viewer';
 import { EventElement, EventProperties, EventProperty } from '@/stores/log-session';
 
 defineProps<{
     input: EventProperties | EventProperty[] | EventElement[];
 }>();
+
+const { setFilter } = useEventViewerStore();
 </script>
 <template>
     <v-table hover density="compact">
@@ -16,7 +19,12 @@ defineProps<{
                             v-if="typeof property.value === 'object'"
                             :input="property.value.elements"
                         />
-                        <span v-else>{{ property.value }}</span>
+                        <span
+                            v-else
+                            class="pointer"
+                            @click="setFilter(key, property.value.toString())"
+                            >{{ property.value }}</span
+                        >
                     </td>
                     <td v-if="'properties' in property">
                         <EventPropertyInnerTable :input="property.properties" />
@@ -48,3 +56,8 @@ defineProps<{
         </tbody>
     </v-table>
 </template>
+<style lang="scss" scoped>
+.pointer {
+    cursor: pointer;
+}
+</style>

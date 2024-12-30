@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+import { EventFilter } from './event-viewer';
 
 export interface EventElement {
     typeTag?: string;
@@ -28,6 +29,7 @@ export interface SearchLogEventsRequest {
     pageSize: number;
     sortOrder: 'asc' | 'desc';
     expression?: string | null;
+    filters?: EventFilter[];
 }
 
 export interface LogEvent {

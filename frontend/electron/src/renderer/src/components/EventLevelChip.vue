@@ -4,6 +4,9 @@ import { computed } from 'vue';
 const props = defineProps<{
     level: string;
 }>();
+const emit = defineEmits<{
+    (e: 'click', level: string): void;
+}>();
 const normalized = computed(() => {
     let level = props.level.toLowerCase();
     if (level === 'information') {
@@ -33,5 +36,5 @@ const text = computed(() => {
 });
 </script>
 <template>
-    <v-chip rounded :color="color">{{ text }}</v-chip>
+    <v-chip rounded :color="color" @click="emit('click', text)">{{ text }}</v-chip>
 </template>

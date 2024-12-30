@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { useEventViewerStore } from '@/stores/event-viewer';
 import { LogEntryCounts, useLogSessionStore } from '@/stores/log-session';
 import { storeToRefs } from 'pinia';
 import { computed, ref } from 'vue';
 import EventLevelChip from './EventLevelChip.vue';
 
+const { setFilter } = useEventViewerStore();
 const { counts: countsRef } = storeToRefs(useLogSessionStore());
 const counts = computed<LogEntryCounts>(() => {
     const value = countsRef.value;
@@ -55,7 +57,10 @@ const isExpanded = ref(false);
                 <tbody>
                     <tr v-for="entry of logLevelCounts" :key="entry.level">
                         <td>
-                            <EventLevelChip :level="entry.level" />
+                            <EventLevelChip
+                                :level="entry.level"
+                                @click="setFilter('@Level', $event)"
+                            />
                         </td>
                         <td>{{ entry.count }}</td>
                     </tr>
@@ -67,7 +72,9 @@ const isExpanded = ref(false);
             <v-table class="message-templates">
                 <tbody>
                     <tr v-for="(entry, index) of messageTemplates" :key="index">
-                        <td>{{ entry.template }}</td>
+                        <td @click="setFilter('@MessageTemplate', entry.template)">
+                            {{ entry.template }}
+                        </td>
                         <td>{{ entry.count }}</td>
                     </tr>
                 </tbody>
@@ -79,5 +86,9 @@ const isExpanded = ref(false);
 .message-templates {
     max-height: 312px;
     overflow: auto;
+
+    tr > td:first-child {
+        cursor: pointer;
+    }
 }
 </style>

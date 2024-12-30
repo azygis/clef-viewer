@@ -15,7 +15,7 @@ public interface ILogSessionProvider
 
 public delegate bool EventFilter(LogEvent logEvent);
 
-public class LogSessionProvider : ILogSessionProvider
+public class LogSessionProvider(NameResolver nameResolver) : ILogSessionProvider
 {
     private static readonly FrozenSet<char> ExpressionOperators = "@()+=*<>%-".ToCharArray().ToFrozenSet();
 
@@ -33,16 +33,28 @@ public class LogSessionProvider : ILogSessionProvider
 
     public SearchLogEventsResponse GetEvents(Guid sessionId, SearchLogEventsRequest request)
     {
-        var (pageNumber, pageSize, sortOrder, expression) = request;
+        var (pageNumber, pageSize, sortOrder, expression, filters) = request;
         var entries = GetSession(sessionId).Files.SelectMany(x => x.Entries);
+        if (filters?.Length > 0)
+        {
+            var filterExpression = string.Join(" and ", filters.Select(x => $"{x.Property} = '{SerilogExpression.EscapeStringContent(x.Value)}'"));
+            if (string.IsNullOrWhiteSpace(expression))
+            {
+                expression = filterExpression;
+            }
+            else
+            {
+                expression += $" and {filterExpression}";
+            }
+        }
         if (!string.IsNullOrWhiteSpace(expression))
         {
-            EventFilter? filter = null;
-            if (!expression.Any(x => ExpressionOperators.Contains(x)))
+            EventFilter? filter;
+            if (!expression.Contains(' ') && !expression.Any(x => ExpressionOperators.Contains(x)))
             {
                 filter = MessageLike();
             }
-            else if (SerilogExpression.TryCompile(expression, out var expressionResult, out var errorMessage))
+            else if (SerilogExpression.TryCompile(expression, null, nameResolver, out var expressionResult, out _))
             {
                 filter = evt => ExpressionResult.IsTrue(expressionResult(evt));
             }

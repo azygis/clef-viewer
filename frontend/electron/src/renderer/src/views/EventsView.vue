@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import EventCounts from '@/components/EventCounts.vue';
+import EventFilters from '@/components/EventFilters.vue';
 import EventLevelChip from '@/components/EventLevelChip.vue';
 import EventPropertyTable from '@/components/EventPropertyTable.vue';
 import EventsViewSettings from '@/components/EventsViewSettings.vue';
@@ -10,7 +11,7 @@ import { formatDate, normalizeDate } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { reactive, ref, watch } from 'vue';
 
-const { dateFormatString, messageTextLimit } = storeToRefs(useEventViewerStore());
+const { dateFormatString, messageTextLimit, filters } = storeToRefs(useEventViewerStore());
 const sessionStore = useLogSessionStore();
 const { events, totalEvents } = storeToRefs(sessionStore);
 const { isExecuting: isLoading, execute: executeLoad } = useExecutingState(true);
@@ -20,6 +21,7 @@ const searchRequest = reactive<SearchLogEventsRequest>({
     pageSize: 50,
     sortOrder: 'desc',
 });
+watch(filters, (filters) => (searchRequest.filters = filters), { deep: true });
 watch(searchRequest, (request) => executeLoad(() => sessionStore.loadEvents(request)), {
     immediate: true,
 });
@@ -65,6 +67,7 @@ function formatMessage(item: LogEvent) {
                     <v-text-field
                         v-model="searchExpression"
                         clearable
+                        hide-details
                         density="compact"
                         label="Search expression"
                         @click:clear="clearSearch"
@@ -75,6 +78,7 @@ function formatMessage(item: LogEvent) {
                 </v-col>
             </v-row>
         </v-form>
+        <EventFilters />
         <EventCounts />
         <v-row>
             <v-col>
@@ -105,6 +109,7 @@ function formatMessage(item: LogEvent) {
                     item-value="timestamp"
                     class="event-table"
                     show-expand
+                    hover
                     @update:options="changeOptions"
                 >
                     <template #top>
