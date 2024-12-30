@@ -2,9 +2,25 @@ import axios from 'axios';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 
+export interface EventElement {
+    typeTag?: string;
+    properties?: EventProperty[];
+    value?: string | number | { value: unknown };
+}
+
+export interface EventProperty {
+    name?: string;
+    value?: {
+        value?: unknown;
+        elements?: EventElement[];
+    };
+    elements?: EventElement[];
+}
 export type EventProperties = Record<
     string,
-    { value: unknown } | { properties: { name: string; value: { value: unknown } }[] }
+    | { properties: EventProperty[] }
+    | { elements: EventElement[] }
+    | { value: string | number | { elements: EventProperty[] } }
 >;
 
 export interface SearchLogEventsRequest {

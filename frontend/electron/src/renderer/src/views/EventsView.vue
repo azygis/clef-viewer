@@ -10,21 +10,26 @@ import { formatDate, normalizeDate } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { reactive, ref, watch } from 'vue';
 
-const { dateFormatString, messageTextLimit, searchExpression } = storeToRefs(useEventViewerStore());
+const { dateFormatString, messageTextLimit } = storeToRefs(useEventViewerStore());
 const sessionStore = useLogSessionStore();
 const { events, totalEvents } = storeToRefs(sessionStore);
 const { isExecuting: isLoading, execute: executeLoad } = useExecutingState(true);
+const searchExpression = ref<string | null | undefined>();
 const searchRequest = reactive<SearchLogEventsRequest>({
     pageNumber: 1,
     pageSize: 50,
     sortOrder: 'desc',
 });
-watch(searchExpression, (expression) => (searchRequest.expression = expression));
 watch(searchRequest, (request) => executeLoad(() => sessionStore.loadEvents(request)), {
     immediate: true,
 });
 
 const expanded = ref<string[]>();
+
+function clearSearch() {
+    searchExpression.value = undefined;
+    searchRequest.expression = undefined;
+}
 
 function changeOptions(input: {
     page: number;
@@ -54,7 +59,22 @@ function formatMessage(item: LogEvent) {
 </script>
 <template>
     <v-container fluid>
-        <EventsViewSettings />
+        <v-form @submit.prevent="searchRequest.expression = searchExpression">
+            <v-row>
+                <v-col cols="10">
+                    <v-text-field
+                        v-model="searchExpression"
+                        clearable
+                        density="compact"
+                        label="Search expression"
+                        @click:clear="clearSearch"
+                    />
+                </v-col>
+                <v-col cols="2">
+                    <v-btn type="submit">Search</v-btn>
+                </v-col>
+            </v-row>
+        </v-form>
         <EventCounts />
         <v-row>
             <v-col>
@@ -87,6 +107,12 @@ function formatMessage(item: LogEvent) {
                     show-expand
                     @update:options="changeOptions"
                 >
+                    <template #top>
+                        <v-sheet class="d-flex mt-4 mx-4">
+                            <h2 class="me-auto">Events</h2>
+                            <EventsViewSettings />
+                        </v-sheet>
+                    </template>
                     <template #[`item.timestamp`]="{ item }">
                         <span>{{ formatTimestamp(item) }}</span>
                     </template>
@@ -117,7 +143,6 @@ function formatMessage(item: LogEvent) {
                                 </v-row>
                                 <v-row class="properties">
                                     <v-col>
-                                        <h2>Properties</h2>
                                         <EventPropertyTable :item="item" />
                                     </v-col>
                                 </v-row>

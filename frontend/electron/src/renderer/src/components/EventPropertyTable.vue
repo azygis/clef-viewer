@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { LogEvent } from '@/stores/log-session';
 import EventLevelChip from './EventLevelChip.vue';
+import EventPropertyInnerTable from './EventPropertyInnerTable.vue';
 
 defineProps<{
     item: LogEvent;
 }>();
 </script>
 <template>
-    <v-table density="compact">
+    <h2>General properties</h2>
+    <v-table hover density="compact">
         <tbody>
             <tr>
                 <td>Level</td>
@@ -21,22 +23,8 @@ defineProps<{
                 <td>MessageTemplate</td>
                 <td>{{ item.messageTemplate }}</td>
             </tr>
-            <tr v-for="(property, key) of item.properties" :key="key">
-                <td>{{ key }}</td>
-                <td v-if="'value' in property">
-                    {{ property.value }}
-                </td>
-                <td v-else-if="'properties' in property">
-                    <v-table density="compact">
-                        <tbody>
-                            <tr v-for="inner of property.properties" :key="inner.name">
-                                <td>{{ inner.name }}</td>
-                                <td>{{ inner.value.value }}</td>
-                            </tr>
-                        </tbody>
-                    </v-table>
-                </td>
-            </tr>
         </tbody>
     </v-table>
+    <h2>Other properties</h2>
+    <EventPropertyInnerTable :input="item.properties" />
 </template>
