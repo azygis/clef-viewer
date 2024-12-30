@@ -3,15 +3,17 @@ using Serilog.Expressions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers().AddNewtonsoftJson();
+builder.Services.AddLogging().AddControllers().AddNewtonsoftJson();
+builder.Services.AddSignalR();
 builder.Services.AddScoped<ILogFileReader, LogFileReader>();
 builder.Services.AddSingleton<ILogSessionProvider, LogSessionProvider>();
 builder.Services.AddSingleton<NameResolver, CustomMemberNameResolver>();
 
 var app = builder.Build();
 
-app.UseCors(b => b.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+app.UseCors(b => b.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().DisallowCredentials());
 
 app.MapControllers();
+app.MapHub<LogHub>("log-hub");
 
 app.Run();

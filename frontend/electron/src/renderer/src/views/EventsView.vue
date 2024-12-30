@@ -7,14 +7,16 @@ import EventsViewSettings from '@/components/EventsViewSettings.vue';
 import { useExecutingState } from '@/composables/useExecutingState';
 import { useEventViewerStore } from '@/stores/event-viewer';
 import { LogEvent, SearchLogEventsRequest, useLogSessionStore } from '@/stores/log-session';
+import { useSignalR } from '@dreamonkey/vue-signalr';
 import { formatDate, normalizeDate } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { reactive, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 
 const { dateFormatString, messageTextLimit, filters } = storeToRefs(useEventViewerStore());
 const sessionStore = useLogSessionStore();
-const { events, totalEvents } = storeToRefs(sessionStore);
+const { sessionId: currentSessionId, events, totalEvents } = storeToRefs(sessionStore);
 const { isExecuting: isLoading, execute: executeLoad } = useExecutingState(true);
+const { isExecuting: isReloading, execute: executeReload } = useExecutingState();
 const searchExpression = ref<string | null | undefined>();
 const searchRequest = reactive<SearchLogEventsRequest>({
     pageNumber: 1,
@@ -22,9 +24,10 @@ const searchRequest = reactive<SearchLogEventsRequest>({
     sortOrder: 'desc',
 });
 watch(filters, (filters) => (searchRequest.filters = filters), { deep: true });
-watch(searchRequest, (request) => executeLoad(() => sessionStore.loadEvents(request)), {
-    immediate: true,
-});
+watch(searchRequest, (request) => loadEvents(request), { immediate: true });
+function loadEvents(request: SearchLogEventsRequest) {
+    return executeLoad(() => sessionStore.loadEvents(request));
+}
 
 const expanded = ref<string[]>();
 
@@ -57,6 +60,26 @@ function formatMessage(item: LogEvent) {
 
     const remainder = message.length - limit;
     return `${item.message.slice(0, limit)}… (${remainder} more)`;
+}
+
+const changedFiles = reactive(new Set<string>());
+const hasChangedFiles = computed(() => changedFiles.size > 0);
+const signalr = useSignalR();
+onMounted(() => {
+    signalr.on('FileChanged', (sessionId, file) => {
+        if (currentSessionId.value === sessionId) {
+            changedFiles.add(file);
+        }
+    });
+});
+onBeforeUnmount(() => {
+    signalr.off('FileChanged');
+});
+async function reload() {
+    const filePaths = [...changedFiles];
+    await executeReload(() => sessionStore.reload(filePaths));
+    changedFiles.clear();
+    loadEvents(searchRequest);
 }
 </script>
 <template>
@@ -157,6 +180,13 @@ function formatMessage(item: LogEvent) {
                 </v-data-table-server>
             </v-col>
         </v-row>
+        <v-snackbar v-model="hasChangedFiles">
+            Log files have been changed
+            <template #actions>
+                <v-btn color="primary" :loading="isReloading" @click="reload">Reload</v-btn>
+                <v-btn color="secondary" @click="changedFiles.clear()">Close</v-btn>
+            </template>
+        </v-snackbar>
     </v-container>
 </template>
 <style lang="scss" scoped>

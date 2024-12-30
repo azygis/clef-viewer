@@ -64,7 +64,8 @@ export const useLogSessionStore = defineStore('log-session', () => {
     const totalEvents = computed(() => counts.value?.total ?? 0);
     const hasActiveSession = computed(() => !!sessionId.value);
 
-    function setId(id: string) {
+    async function setId(id: string) {
+        await Promise.all([setTrackChanges(sessionId.value, false), setTrackChanges(id, true)]);
         sessionId.value = id;
     }
 
@@ -76,5 +77,17 @@ export const useLogSessionStore = defineStore('log-session', () => {
         counts.value = response.counts;
     }
 
-    return { sessionId, hasActiveSession, events, totalEvents, counts, setId, loadEvents };
+    function setTrackChanges(id: string, track: boolean) {
+        if (!id) {
+            return Promise.resolve();
+        }
+
+        return axios.patch(`log-sessions/${id}/track`, null, { params: { track } });
+    }
+
+    function reload(filePath: string[]) {
+        return axios.post(`log-sessions/${sessionId.value}/reload`, null, { params: { filePath } });
+    }
+
+    return { sessionId, hasActiveSession, events, totalEvents, counts, setId, loadEvents, reload };
 });

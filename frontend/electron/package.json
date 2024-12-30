@@ -21,8 +21,10 @@
     "build:linux": "npm run build && electron-builder --linux"
   },
   "dependencies": {
+    "@dreamonkey/vue-signalr": "^1.2.0",
     "@electron-toolkit/preload": "^3.0.0",
     "@electron-toolkit/utils": "^3.0.0",
+    "@microsoft/signalr": "^8.0.7",
     "@vueuse/core": "^12.2.0",
     "electron-updater": "^6.1.7",
     "lodash": "^4.17.21"

@@ -5,12 +5,16 @@ using Serilog.Formatting.Compact.Reader;
 
 namespace ClefViewer.API.Business;
 
-public sealed record LogFiles(string[] Paths, List<LogFile> Files)
-{
-    public long TotalSize => Files.Sum(f => f.Size);
-}
+public sealed record LogFiles([property: JsonIgnore] string[] Paths, List<LogFile> Files);
 
-public sealed record LogFile(string Path, long Size, List<LogFileEntry> Entries);
+public sealed record LogFile([property: JsonIgnore] string Path, List<LogFileEntry> Entries)
+{
+    [JsonIgnore]
+    public string DirectoryPath => System.IO.Path.GetDirectoryName(Path)!;
+
+    [JsonIgnore]
+    public long StreamPosition { get; set; }
+}
 
 public sealed class LogFileEntry(LogEvent logEvent)
 {
@@ -32,6 +36,7 @@ public sealed class LogFileEntry(LogEvent logEvent)
 public interface ILogFileReader
 {
     Task<LogFiles> ReadLogFilesAsync(string[] paths, CancellationToken cancellationToken);
+    Task AddLogEntriesAsync(LogFile logFile, CancellationToken cancellationToken);
 }
 
 public sealed class LogFileReader : ILogFileReader
@@ -54,19 +59,26 @@ public sealed class LogFileReader : ILogFileReader
         foreach (var filePath in allFilePaths)
         {
             cancellationToken.ThrowIfCancellationRequested();
-
             var entries = new List<LogFileEntry>();
-            var fileName = Path.GetFileName(filePath);
-            await using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            var fileSize = stream.Length;
-            using var streamReader = new StreamReader(stream);
-            using var logEventReader = new LogEventReader(streamReader);
-            while (logEventReader.TryRead(out var logEvent))
-            {
-                entries.Add(new LogFileEntry(logEvent));
-            }
-            logFiles.Add(new LogFile(fileName, fileSize, entries));
+            var logFile = new LogFile(filePath, entries);
+            await AddLogEntriesAsync(logFile, cancellationToken);
+            logFiles.Add(logFile);
         }
         return new LogFiles(paths, logFiles);
+    }
+
+    public async Task AddLogEntriesAsync(LogFile file, CancellationToken cancellationToken)
+    {
+        var entries = file.Entries;
+        await using var stream = new FileStream(file.Path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        stream.Seek(file.StreamPosition, SeekOrigin.Begin);
+        using var streamReader = new StreamReader(stream);
+        using var logEventReader = new LogEventReader(streamReader);
+        while (logEventReader.TryRead(out var logEvent))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            entries.Add(new LogFileEntry(logEvent));
+        }
+        file.StreamPosition = stream.Position;
     }
 }
