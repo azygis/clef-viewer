@@ -29,4 +29,8 @@ public sealed class LogSessionsController(ILogSessionProvider logSessionProvider
             await logFileReader.AddLogEntriesAsync(logFile, cancellationToken);
         }
     }
+
+    [HttpDelete("{sessionId:guid}")]
+    public void DeleteSession(Guid sessionId) =>
+        logSessionProvider.DeleteSession(sessionId);
 }

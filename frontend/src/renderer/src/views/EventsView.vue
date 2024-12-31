@@ -5,20 +5,19 @@ import EventLevelChip from '@/components/EventLevelChip.vue';
 import EventPropertyTable from '@/components/EventPropertyTable.vue';
 import EventsViewSettings from '@/components/EventsViewSettings.vue';
 import { useExecutingState } from '@/composables/executingState';
+import { useFileChangeTracker } from '@/composables/fileChangeTracker';
 import { useLimitedTextLength } from '@/composables/limitedTextLength';
 import { useEventViewerStore } from '@/stores/event-viewer';
 import { LogEvent, SearchLogEventsRequest, useLogSessionStore } from '@/stores/log-session';
-import { useSignalR } from '@dreamonkey/vue-signalr';
 import { formatDate, normalizeDate } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
+import { reactive, ref, watch } from 'vue';
 
 const { dateFormatString, messageTextLimit, filters } = storeToRefs(useEventViewerStore());
 const { truncate } = useLimitedTextLength(messageTextLimit);
 const sessionStore = useLogSessionStore();
 const { sessionId: currentSessionId, events, totalEvents } = storeToRefs(sessionStore);
 const { isExecuting: isLoading, execute: executeLoad } = useExecutingState(true);
-const { isExecuting: isReloading, execute: executeReload } = useExecutingState();
 const searchExpression = ref<string | null | undefined>();
 const searchRequest = reactive<SearchLogEventsRequest>({
     pageNumber: 1,
@@ -54,26 +53,15 @@ function formatTimestamp(item: LogEvent) {
     return formatDate(normalizeDate(item.timestamp), dateFormatString.value);
 }
 
-const changedFiles = reactive(new Set<string>());
-const hasChangedFiles = computed(() => changedFiles.size > 0);
-const signalr = useSignalR();
-function onFileChanged(sessionId: string, filePath: string) {
-    if (currentSessionId.value === sessionId) {
-        changedFiles.add(filePath);
+const { hasChangedFiles, isReloadingChanges, reloadChanges, clearChanges } =
+    useFileChangeTracker().forSession(currentSessionId.value!);
+async function reloadChangedFiles() {
+    await reloadChanges();
+    if (searchRequest.pageNumber > 1) {
+        searchRequest.pageNumber = 1;
+    } else {
+        loadEvents(searchRequest);
     }
-}
-onMounted(() => {
-    signalr.on('FileChanged', onFileChanged);
-});
-onBeforeUnmount(() => {
-    signalr.off('FileChanged');
-    sessionStore.setId(undefined);
-});
-async function reload() {
-    const filePaths = [...changedFiles];
-    await executeReload(() => sessionStore.reload(filePaths));
-    changedFiles.clear();
-    loadEvents(searchRequest);
 }
 </script>
 <template>
@@ -177,8 +165,10 @@ async function reload() {
         <v-snackbar v-model="hasChangedFiles">
             Log files have been changed
             <template #actions>
-                <v-btn color="primary" :loading="isReloading" @click="reload">Reload</v-btn>
-                <v-btn color="secondary" @click="changedFiles.clear()">Close</v-btn>
+                <v-btn color="primary" :loading="isReloadingChanges" @click="reloadChangedFiles"
+                    >Reload</v-btn
+                >
+                <v-btn color="secondary" @click="clearChanges">Close</v-btn>
             </template>
         </v-snackbar>
     </v-container>

@@ -75,12 +75,7 @@ export const useLogSessionStore = defineStore('log-session', () => {
     }
 
     async function setId(id: string | undefined) {
-        await Promise.all([setTrackChanges(sessionId.value, false), setTrackChanges(id, true)]);
         sessionId.value = id;
-        if (!id) {
-            events.value = [];
-            counts.value = undefined;
-        }
     }
 
     async function loadEvents(request: SearchLogEventsRequest) {
@@ -91,16 +86,20 @@ export const useLogSessionStore = defineStore('log-session', () => {
         counts.value = response.counts;
     }
 
-    function setTrackChanges(id: string | undefined, track: boolean) {
-        if (!id) {
-            return Promise.resolve();
-        }
-
-        return axios.patch(`log-sessions/${id}/track`, null, { params: { track } });
-    }
-
     function reload(filePath: string[]) {
         return axios.post(`log-sessions/${sessionId.value}/reload`, null, { params: { filePath } });
+    }
+
+    async function removeSession(id: string) {
+        await axios.delete(`log-sessions/${id}`);
+        if (sessionId.value === id) {
+            sessionId.value = undefined;
+        }
+    }
+
+    function clear() {
+        events.value = [];
+        counts.value = undefined;
     }
 
     return {
@@ -113,5 +112,7 @@ export const useLogSessionStore = defineStore('log-session', () => {
         setId,
         loadEvents,
         reload,
+        removeSession,
+        clear,
     };
 });

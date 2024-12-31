@@ -1,14 +1,20 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
+import { onBeforeUnmount, onMounted } from 'vue';
+import { useFileChangeTracker } from './composables/fileChangeTracker';
 import { useLogSessionStore } from './stores/log-session';
 import { useSnackbarStore } from './stores/snackbar';
 
 const { visible, currentMessage, currentColor } = storeToRefs(useSnackbarStore());
-const { hasActiveSession, sessionId } = storeToRefs(useLogSessionStore());
+const sessionStore = useLogSessionStore();
+const { hasActiveSession, sessionId } = storeToRefs(sessionStore);
+const { startChangeTracking, stopChangeTracking } = useFileChangeTracker();
+onMounted(() => startChangeTracking());
+onBeforeUnmount(() => stopChangeTracking());
 </script>
 
 <template>
-    <v-app id="inspire">
+    <v-app>
         <v-navigation-drawer absolute permanent rail expand-on-hover open-delay="500">
             <v-list density="compact" nav>
                 <v-list-item

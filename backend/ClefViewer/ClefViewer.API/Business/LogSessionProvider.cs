@@ -14,6 +14,7 @@ public interface ILogSessionProvider
     LogFiles GetSession(Guid sessionId);
     void SetTrackChanges(Guid sessionId, bool track);
     SearchLogEventsResponse GetEvents(Guid sessionId, SearchLogEventsRequest request);
+    void DeleteSession(Guid sessionId);
 }
 
 public delegate bool EventFilter(LogEvent logEvent);
@@ -37,7 +38,7 @@ public class LogSessionProvider(NameResolver nameResolver, IHubContext<LogHub> h
             var watchers = new List<FileSystemWatcher>();
             foreach (var fileGroup in logFiles.Files.GroupBy(x => x.DirectoryPath))
             {
-                var watcher = new FileSystemWatcher(fileGroup.Key) { NotifyFilter = NotifyFilters.LastWrite };
+                var watcher = new FileSystemWatcher(fileGroup.Key) { NotifyFilter = NotifyFilters.LastWrite, EnableRaisingEvents = true };
                 watcher.Changed += (_, args) => hubContext.Clients.All.SendAsync(LogHub.FilesChanged, sessionId, args.FullPath);
                 foreach (var fileName in fileGroup.Select(x => Path.GetFileName(x.Path)))
                 {
@@ -119,5 +120,20 @@ public class LogSessionProvider(NameResolver nameResolver, IHubContext<LogHub> h
 
         EventFilter IsTrue(CompiledExpression compiledExpression) =>
             evt => ExpressionResult.IsTrue(compiledExpression(evt));
+    }
+
+    public void DeleteSession(Guid sessionId)
+    {
+        var session = GetSession(sessionId);
+        session.Files.ForEach(x => x.Entries.Clear());
+        session.Files.Clear();
+        _sessions.Remove(sessionId);
+        var watchers = _watchers[sessionId];
+        watchers.ForEach(x =>
+        {
+            x.EnableRaisingEvents = false;
+            x.Dispose();
+        });
+        _watchers.Remove(sessionId);
     }
 }
