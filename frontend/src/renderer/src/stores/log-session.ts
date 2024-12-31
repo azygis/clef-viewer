@@ -3,6 +3,12 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { EventFilter } from './event-viewer';
 
+export interface LogSessionDTO {
+    id: string;
+    eventCount: number;
+    paths: string[];
+}
+
 export interface EventElement {
     typeTag?: string;
     properties?: EventProperty[];
@@ -58,15 +64,23 @@ export interface LogEntriesResponse {
 }
 
 export const useLogSessionStore = defineStore('log-session', () => {
-    const sessionId = ref<string>(undefined!);
+    const sessionId = ref<string>();
     const events = ref<LogEvent[]>([]);
     const counts = ref<LogEntryCounts>();
     const totalEvents = computed(() => counts.value?.total ?? 0);
     const hasActiveSession = computed(() => !!sessionId.value);
 
-    async function setId(id: string) {
+    async function getSessions() {
+        return (await axios.get<LogSessionDTO[]>('log-sessions')).data;
+    }
+
+    async function setId(id: string | undefined) {
         await Promise.all([setTrackChanges(sessionId.value, false), setTrackChanges(id, true)]);
         sessionId.value = id;
+        if (!id) {
+            events.value = [];
+            counts.value = undefined;
+        }
     }
 
     async function loadEvents(request: SearchLogEventsRequest) {
@@ -77,7 +91,7 @@ export const useLogSessionStore = defineStore('log-session', () => {
         counts.value = response.counts;
     }
 
-    function setTrackChanges(id: string, track: boolean) {
+    function setTrackChanges(id: string | undefined, track: boolean) {
         if (!id) {
             return Promise.resolve();
         }
@@ -89,5 +103,15 @@ export const useLogSessionStore = defineStore('log-session', () => {
         return axios.post(`log-sessions/${sessionId.value}/reload`, null, { params: { filePath } });
     }
 
-    return { sessionId, hasActiveSession, events, totalEvents, counts, setId, loadEvents, reload };
+    return {
+        sessionId,
+        hasActiveSession,
+        events,
+        totalEvents,
+        counts,
+        getSessions,
+        setId,
+        loadEvents,
+        reload,
+    };
 });

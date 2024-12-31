@@ -22,7 +22,6 @@ const { hasActiveSession, sessionId } = storeToRefs(useLogSessionStore());
                     title="Current session"
                     :to="{ name: 'events', params: { sessionId } }"
                 ></v-list-item>
-                <v-list-item prepend-icon="mdi-star" title="Starred" value="starred"></v-list-item>
             </v-list>
         </v-navigation-drawer>
 

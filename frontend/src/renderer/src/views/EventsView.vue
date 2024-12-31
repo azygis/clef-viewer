@@ -4,7 +4,8 @@ import EventFilters from '@/components/EventFilters.vue';
 import EventLevelChip from '@/components/EventLevelChip.vue';
 import EventPropertyTable from '@/components/EventPropertyTable.vue';
 import EventsViewSettings from '@/components/EventsViewSettings.vue';
-import { useExecutingState } from '@/composables/useExecutingState';
+import { useExecutingState } from '@/composables/executingState';
+import { useLimitedTextLength } from '@/composables/limitedTextLength';
 import { useEventViewerStore } from '@/stores/event-viewer';
 import { LogEvent, SearchLogEventsRequest, useLogSessionStore } from '@/stores/log-session';
 import { useSignalR } from '@dreamonkey/vue-signalr';
@@ -13,6 +14,7 @@ import { storeToRefs } from 'pinia';
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 
 const { dateFormatString, messageTextLimit, filters } = storeToRefs(useEventViewerStore());
+const { truncate } = useLimitedTextLength(messageTextLimit);
 const sessionStore = useLogSessionStore();
 const { sessionId: currentSessionId, events, totalEvents } = storeToRefs(sessionStore);
 const { isExecuting: isLoading, execute: executeLoad } = useExecutingState(true);
@@ -22,6 +24,7 @@ const searchRequest = reactive<SearchLogEventsRequest>({
     pageNumber: 1,
     pageSize: 50,
     sortOrder: 'desc',
+    filters: filters.value,
 });
 watch(filters, (filters) => (searchRequest.filters = filters), { deep: true });
 watch(searchRequest, (request) => loadEvents(request), { immediate: true });
@@ -51,29 +54,20 @@ function formatTimestamp(item: LogEvent) {
     return formatDate(normalizeDate(item.timestamp), dateFormatString.value);
 }
 
-function formatMessage(item: LogEvent) {
-    const message = item.message;
-    const limit = messageTextLimit.value;
-    if (!limit || limit < 1 || message.length <= limit) {
-        return item.message;
-    }
-
-    const remainder = message.length - limit;
-    return `${item.message.slice(0, limit)}… (${remainder} more)`;
-}
-
 const changedFiles = reactive(new Set<string>());
 const hasChangedFiles = computed(() => changedFiles.size > 0);
 const signalr = useSignalR();
+function onFileChanged(sessionId: string, filePath: string) {
+    if (currentSessionId.value === sessionId) {
+        changedFiles.add(filePath);
+    }
+}
 onMounted(() => {
-    signalr.on('FileChanged', (sessionId, file) => {
-        if (currentSessionId.value === sessionId) {
-            changedFiles.add(file);
-        }
-    });
+    signalr.on('FileChanged', onFileChanged);
 });
 onBeforeUnmount(() => {
     signalr.off('FileChanged');
+    sessionStore.setId(undefined);
 });
 async function reload() {
     const filePaths = [...changedFiles];
@@ -148,7 +142,7 @@ async function reload() {
                         <EventLevelChip :level="item.level" />
                     </template>
                     <template #[`item.message`]="{ item }">
-                        <span>{{ formatMessage(item) }}</span>
+                        <span>{{ truncate(item.message) }}</span>
                     </template>
                     <template #expanded-row="{ item, columns }">
                         <tr class="expanded">

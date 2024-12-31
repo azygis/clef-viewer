@@ -1,5 +1,4 @@
 using System.Collections.Frozen;
-using System.Collections.ObjectModel;
 using ClefViewer.API.Data;
 using ClefViewer.API.Exceptions;
 using Microsoft.AspNetCore.SignalR;
@@ -11,6 +10,7 @@ namespace ClefViewer.API.Business;
 public interface ILogSessionProvider
 {
     Guid AddSession(LogFiles logFiles);
+    IEnumerable<LogSessionDTO> GetSessions();
     LogFiles GetSession(Guid sessionId);
     void SetTrackChanges(Guid sessionId, bool track);
     SearchLogEventsResponse GetEvents(Guid sessionId, SearchLogEventsRequest request);
@@ -38,7 +38,7 @@ public class LogSessionProvider(NameResolver nameResolver, IHubContext<LogHub> h
             foreach (var fileGroup in logFiles.Files.GroupBy(x => x.DirectoryPath))
             {
                 var watcher = new FileSystemWatcher(fileGroup.Key) { NotifyFilter = NotifyFilters.LastWrite };
-                watcher.Changed += (_, args) => hubContext.Clients.All.SendAsync("FileChanged", sessionId, args.FullPath);
+                watcher.Changed += (_, args) => hubContext.Clients.All.SendAsync(LogHub.FilesChanged, sessionId, args.FullPath);
                 foreach (var fileName in fileGroup.Select(x => Path.GetFileName(x.Path)))
                 {
                     watcher.Filters.Add(fileName);
@@ -48,6 +48,9 @@ public class LogSessionProvider(NameResolver nameResolver, IHubContext<LogHub> h
             return watchers;
         }
     }
+
+    public IEnumerable<LogSessionDTO> GetSessions() =>
+        _sessions.Select(x => new LogSessionDTO(x.Key, x.Value.Files.Sum(y => y.Entries.Count), x.Value.Paths));
 
     public LogFiles GetSession(Guid sessionId) =>
         _sessions.TryGetValue(sessionId, out var logFiles) ? logFiles : throw new EntityNotFoundException("Session", sessionId);

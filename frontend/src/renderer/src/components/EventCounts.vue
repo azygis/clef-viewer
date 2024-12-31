@@ -40,7 +40,7 @@ const isExpanded = ref(false);
 </script>
 <template>
     <v-row dense>
-        <v-col>
+        <v-col v-if="!!countsRef">
             <span
                 >{{ counts.total }} events, {{ errorLikeCount }} error-like.
                 {{ messageTemplateCount }} message templates.</span
@@ -48,6 +48,9 @@ const isExpanded = ref(false);
             <v-icon @click="isExpanded = !isExpanded">{{
                 isExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down'
             }}</v-icon>
+        </v-col>
+        <v-col v-else>
+            <span>…</span>
         </v-col>
     </v-row>
     <v-row v-if="isExpanded" dense>

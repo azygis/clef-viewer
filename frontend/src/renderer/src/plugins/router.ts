@@ -14,9 +14,10 @@ const router = createRouter({
             path: '/events/:sessionId',
             name: 'events',
             component: () => import('../views/EventsView.vue'),
-            beforeEnter: (to) => {
+            beforeEnter: async (to, _from, next) => {
                 const { setId } = useLogSessionStore();
-                setId(to.params.sessionId as string);
+                await setId(to.params.sessionId as string);
+                next();
             },
         },
     ],

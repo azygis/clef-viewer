@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Serilog.Events;
@@ -5,32 +6,26 @@ using Serilog.Formatting.Compact.Reader;
 
 namespace ClefViewer.API.Business;
 
-public sealed record LogFiles([property: JsonIgnore] string[] Paths, List<LogFile> Files);
+public sealed record LogFiles(string[] Paths, List<LogFile> Files);
 
 public sealed record LogFile([property: JsonIgnore] string Path, List<LogFileEntry> Entries)
 {
-    [JsonIgnore]
-    public string DirectoryPath => System.IO.Path.GetDirectoryName(Path)!;
-
-    [JsonIgnore]
-    public long StreamPosition { get; set; }
+    [JsonIgnore] public string DirectoryPath { get; } = System.IO.Path.GetDirectoryName(Path)!;
+    [JsonIgnore] public long StreamPosition { get; set; }
 }
 
 public sealed class LogFileEntry(LogEvent logEvent)
 {
-    private string? _message;
-    private string? _exception;
-
-    [JsonIgnore]
-    public LogEvent Event => logEvent;
+    [JsonIgnore] public LogEvent Event => logEvent;
 
     [JsonConverter(typeof(StringEnumConverter))]
-    public LogEventLevel Level => logEvent.Level;
-    public string Message => _message ??= logEvent.RenderMessage();
-    public string MessageTemplate => logEvent.MessageTemplate.Text;
-    public string? Exception => _exception ??= logEvent.Exception?.ToString();
-    public DateTimeOffset Timestamp => logEvent.Timestamp;
-    public IReadOnlyDictionary<string, LogEventPropertyValue> Properties => logEvent.Properties;
+    public LogEventLevel Level { get; } = logEvent.Level;
+
+    public string Message { get; } = logEvent.RenderMessage();
+    public string MessageTemplate { get; } = logEvent.MessageTemplate.Text;
+    public string? Exception { get; } = logEvent.Exception?.ToString();
+    public DateTimeOffset Timestamp { get; } = logEvent.Timestamp;
+    public IReadOnlyDictionary<string, LogEventPropertyValue> Properties { get; } = logEvent.Properties;
 }
 
 public interface ILogFileReader
@@ -41,20 +36,14 @@ public interface ILogFileReader
 
 public sealed class LogFileReader : ILogFileReader
 {
-    private static readonly HashSet<string> AllowedExtensions = [".clef", ".json", ".txt"];
+    private static readonly FrozenSet<string> AllowedExtensions = new[] { ".clef", ".json", ".txt" }.ToFrozenSet();
 
     public async Task<LogFiles> ReadLogFilesAsync(string[] paths, CancellationToken cancellationToken)
     {
-        var filePaths = paths.Where(File.Exists).ToArray();
-        var directoryPaths = paths.Where(Directory.Exists).ToArray();
-        var directoryFiles = directoryPaths
-            .Where(Directory.Exists)
-            .SelectMany(x =>
-                Directory.EnumerateFiles(x, "*.*", SearchOption.TopDirectoryOnly)
-                    .Where(y => AllowedExtensions.Contains(Path.GetExtension(y))));
-
-        var allFilePaths = filePaths.Concat(directoryFiles).ToArray();
-
+        var filePaths = paths.Where(File.Exists);
+        var directoryPaths = paths.Where(Directory.Exists).Where(Directory.Exists).SelectMany(x =>
+            Directory.EnumerateFiles(x, "*.*", SearchOption.TopDirectoryOnly).Where(y => AllowedExtensions.Contains(Path.GetExtension(y))));
+        var allFilePaths = filePaths.Concat(directoryPaths).ToHashSet();
         var logFiles = new List<LogFile>();
         foreach (var filePath in allFilePaths)
         {
@@ -64,6 +53,7 @@ public sealed class LogFileReader : ILogFileReader
             await AddLogEntriesAsync(logFile, cancellationToken);
             logFiles.Add(logFile);
         }
+
         return new LogFiles(paths, logFiles);
     }
 
@@ -79,6 +69,7 @@ public sealed class LogFileReader : ILogFileReader
             cancellationToken.ThrowIfCancellationRequested();
             entries.Add(new LogFileEntry(logEvent));
         }
+
         file.StreamPosition = stream.Position;
     }
 }

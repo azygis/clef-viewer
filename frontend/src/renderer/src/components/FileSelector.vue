@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useExecutingState } from '@/composables/useExecutingState';
+import { useExecutingState } from '@/composables/executingState';
 import { useLogFilesStore } from '@/stores/log-files';
 import { useSnackbarStore } from '@/stores/snackbar';
 import { computed, reactive } from 'vue';
@@ -96,15 +96,6 @@ function removePath(path: string) {
                     {{ getFileName(path) }}</v-chip
                 >
             </v-chip-group>
-        </v-col>
-    </v-row>
-    <v-row>
-        <v-col>
-            Selected files:
-            <pre>
-        {{ paths }}
-    </pre
-            >
         </v-col>
     </v-row>
 </template>
