@@ -6,14 +6,26 @@ defineProps<{
     input: EventProperties | EventProperty[] | EventElement[];
 }>();
 
-const { setFilter } = useEventViewerStore();
+const { setFilter, toggleColumn } = useEventViewerStore();
+
+function isPrimitive(input: EventProperties[1]) {
+    return 'value' in input && typeof input.value !== 'object';
+}
 </script>
 <template>
     <v-table hover density="compact">
         <tbody>
             <template v-if="!Array.isArray(input)">
                 <tr v-for="(property, key) of input" :key="key">
-                    <td v-if="key">{{ key }}</td>
+                    <td v-if="key">
+                        <span
+                            v-if="isPrimitive(property)"
+                            class="pointer"
+                            @click="toggleColumn(key)"
+                            >{{ key }}</span
+                        >
+                        <span v-else>{{ key }}</span>
+                    </td>
                     <td v-if="'value' in property">
                         <EventPropertyInnerTable
                             v-if="typeof property.value === 'object'"

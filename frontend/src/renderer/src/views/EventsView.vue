@@ -11,9 +11,16 @@ import { useEventViewerStore } from '@/stores/event-viewer';
 import { LogEvent, SearchLogEventsRequest, useLogSessionStore } from '@/stores/log-session';
 import { formatDate, normalizeDate } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { reactive, ref, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
+import { type VDataTableServer } from 'vuetify/components';
 
-const { dateFormatString, messageTextLimit, filters } = storeToRefs(useEventViewerStore());
+const {
+    dateFormatString,
+    messageTextLimit,
+    filters,
+    columns: additionalColumns,
+} = storeToRefs(useEventViewerStore());
+const { toggleColumn } = useEventViewerStore();
 const { truncate } = useLimitedTextLength(messageTextLimit);
 const sessionStore = useLogSessionStore();
 const { sessionId: currentSessionId, events, totalEvents } = storeToRefs(sessionStore);
@@ -32,6 +39,34 @@ function loadEvents(request: SearchLogEventsRequest) {
 }
 
 const expanded = ref<string[]>();
+type TableHeaders = VDataTableServer['headers'];
+const defaultHeaders: TableHeaders = [
+    {
+        title: 'Timestamp',
+        value: 'timestamp',
+        sortable: true,
+    },
+    {
+        title: 'Level',
+        value: 'level',
+    },
+    {
+        title: 'Message',
+        value: 'message',
+    },
+];
+const headers = computed<TableHeaders>(() => {
+    const result = [...defaultHeaders];
+    for (const column of additionalColumns.value) {
+        result.push({
+            title: column,
+            key: column,
+            sortable: false,
+            value: (item) => truncate(item.properties[column]?.value) ?? '-',
+        });
+    }
+    return result;
+});
 
 function clearSearch() {
     searchExpression.value = undefined;
@@ -89,21 +124,7 @@ async function reloadChangedFiles() {
             <v-col>
                 <v-data-table-server
                     v-model:expanded="expanded"
-                    :headers="[
-                        {
-                            title: 'Timestamp',
-                            value: 'timestamp',
-                            sortable: true,
-                        },
-                        {
-                            title: 'Level',
-                            value: 'level',
-                        },
-                        {
-                            title: 'Message',
-                            value: 'message',
-                        },
-                    ]"
+                    :headers="headers"
                     :sort-by="[{ key: 'timestamp', order: searchRequest.sortOrder }]"
                     :page="searchRequest.pageNumber"
                     :items-per-page="searchRequest.pageSize"
@@ -131,6 +152,14 @@ async function reloadChangedFiles() {
                     </template>
                     <template #[`item.message`]="{ item }">
                         <span>{{ truncate(item.message) }}</span>
+                    </template>
+                    <template
+                        v-for="name of additionalColumns"
+                        :key="name"
+                        #[`header.${name}`]="{ column }"
+                    >
+                        {{ column.title }}
+                        <v-icon size="small" @click="toggleColumn(name)">mdi-close</v-icon>
                     </template>
                     <template #expanded-row="{ item, columns }">
                         <tr class="expanded">

@@ -3,6 +3,10 @@ import { isRef, MaybeRef } from 'vue';
 export function useLimitedTextLength(maxLength: MaybeRef<number | null | undefined>) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function truncate(value: any) {
+        if (!value) {
+            return value;
+        }
+
         if (typeof value !== 'string') {
             value = value.toString();
         }

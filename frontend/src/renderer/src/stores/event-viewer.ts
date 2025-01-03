@@ -10,6 +10,7 @@ export const useEventViewerStore = defineStore('event-viewer', () => {
     const dateFormatString = ref('YYYY-MM-DD HH:mm:ss.SSS');
     const messageTextLimit = ref<number | null>(200);
     const filters = ref<EventFilter[]>([]);
+    const columns = ref<string[]>([]);
 
     function setFilter(property: string, value: string) {
         const existingFilterIndex = filters.value.findIndex((x) => x.property === property);
@@ -24,5 +25,22 @@ export const useEventViewerStore = defineStore('event-viewer', () => {
         filters.value.splice(filters.value.indexOf(filter), 1);
     }
 
-    return { dateFormatString, messageTextLimit, filters, setFilter, removeFilter };
+    function toggleColumn(property: string) {
+        const index = columns.value.indexOf(property);
+        if (index >= 0) {
+            columns.value.splice(index, 1);
+        } else {
+            columns.value.push(property);
+        }
+    }
+
+    return {
+        dateFormatString,
+        messageTextLimit,
+        filters,
+        columns,
+        setFilter,
+        removeFilter,
+        toggleColumn,
+    };
 });
