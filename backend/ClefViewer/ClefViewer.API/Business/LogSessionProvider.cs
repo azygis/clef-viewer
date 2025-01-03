@@ -134,6 +134,7 @@ public class LogSessionProvider(NameResolver nameResolver, IHubContext<LogHub> h
             x.EnableRaisingEvents = false;
             x.Dispose();
         });
+        watchers.Clear();
         _watchers.Remove(sessionId);
     }
 }

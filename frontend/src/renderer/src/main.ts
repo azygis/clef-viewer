@@ -3,9 +3,10 @@ import { createApp } from 'vue';
 
 import axios from 'axios';
 import App from './App.vue';
+import { baseApiUrl } from './constants';
 import { VueSignalR, connection, router, vuetify } from './plugins';
 
-axios.defaults.baseURL = 'http://localhost:5126/';
+axios.defaults.baseURL = baseApiUrl;
 
 const app = createApp(App);
 

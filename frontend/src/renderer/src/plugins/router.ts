@@ -20,6 +20,10 @@ const router = createRouter({
                 next();
             },
         },
+        {
+            path: '/:catchAll(.*)',
+            redirect: '/',
+        },
     ],
 });
 
