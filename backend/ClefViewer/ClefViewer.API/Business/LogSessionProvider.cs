@@ -1,36 +1,28 @@
-using System.Collections.Frozen;
 using ClefViewer.API.Data;
 using ClefViewer.API.Exceptions;
 using Microsoft.AspNetCore.SignalR;
-using Serilog.Events;
-using Serilog.Expressions;
 
 namespace ClefViewer.API.Business;
+
+public sealed record LogSession(LogFiles LogFiles, List<FileSystemWatcher> Watchers);
 
 public interface ILogSessionProvider
 {
     Guid AddSession(LogFiles logFiles);
     IEnumerable<LogSessionDTO> GetSessions();
-    LogFiles GetSession(Guid sessionId);
-    void SetTrackChanges(Guid sessionId, bool track);
+    LogSession GetSession(Guid sessionId);
     SearchLogEventsResponse GetEvents(Guid sessionId, SearchLogEventsRequest request);
     void DeleteSession(Guid sessionId);
 }
 
-public delegate bool EventFilter(LogEvent logEvent);
-
-public class LogSessionProvider(NameResolver nameResolver, IHubContext<LogHub> hubContext) : ILogSessionProvider
+public sealed class LogSessionProvider(IHubContext<LogHub> hubContext, ILogSessionFilterFactory filterFactory) : ILogSessionProvider, IDisposable
 {
-    private static readonly FrozenSet<char> ExpressionOperators = "@()+=*<>%-".ToCharArray().ToFrozenSet();
-
-    private readonly Dictionary<Guid, LogFiles> _sessions = new();
-    private readonly Dictionary<Guid, List<FileSystemWatcher>> _watchers = new();
+    private readonly Dictionary<Guid, LogSession> _sessions = new();
 
     public Guid AddSession(LogFiles logFiles)
     {
         var sessionId = Guid.NewGuid();
-        _sessions.Add(sessionId, logFiles);
-        _watchers.Add(sessionId, ConfigureWatchers());
+        _sessions.Add(sessionId, new LogSession(logFiles, ConfigureWatchers()));
         return sessionId;
 
         List<FileSystemWatcher> ConfigureWatchers()
@@ -51,55 +43,18 @@ public class LogSessionProvider(NameResolver nameResolver, IHubContext<LogHub> h
     }
 
     public IEnumerable<LogSessionDTO> GetSessions() =>
-        _sessions.Select(x => new LogSessionDTO(x.Key, x.Value.Files.Sum(y => y.Entries.Count), x.Value.Paths));
+        _sessions.Select(x => new LogSessionDTO(x.Key, x.Value.LogFiles.Files.Sum(y => y.Entries.Count), x.Value.LogFiles.Paths));
 
-    public LogFiles GetSession(Guid sessionId) =>
-        _sessions.TryGetValue(sessionId, out var logFiles) ? logFiles : throw new EntityNotFoundException("Session", sessionId);
-
-    public void SetTrackChanges(Guid sessionId, bool track)
-    {
-        if (_watchers.TryGetValue(sessionId, out var watchers))
-        {
-            watchers.ForEach(x => x.EnableRaisingEvents = track);
-        }
-    }
+    public LogSession GetSession(Guid sessionId) =>
+        _sessions.TryGetValue(sessionId, out var session) ? session : throw new EntityNotFoundException("Session", sessionId);
 
     public SearchLogEventsResponse GetEvents(Guid sessionId, SearchLogEventsRequest request)
     {
         var (pageNumber, pageSize, sortOrder, expression, filters) = request;
-        var entries = GetSession(sessionId).Files.SelectMany(x => x.Entries);
-        if (filters?.Length > 0)
+        var entries = GetSession(sessionId).LogFiles.Files.SelectMany(x => x.Entries);
+        if (filterFactory.TryCreateFilter(expression, filters, out var filter))
         {
-            var filterExpression = string.Join(" and ", filters.Select(x => $"{x.Property} = '{SerilogExpression.EscapeStringContent(x.Value)}'"));
-            if (string.IsNullOrWhiteSpace(expression))
-            {
-                expression = filterExpression;
-            }
-            else
-            {
-                expression += $" and {filterExpression}";
-            }
-        }
-        if (!string.IsNullOrWhiteSpace(expression))
-        {
-            EventFilter? filter;
-            if (!expression.Contains(' ') && !expression.Any(x => ExpressionOperators.Contains(x)))
-            {
-                filter = MessageLike();
-            }
-            else if (SerilogExpression.TryCompile(expression, null, nameResolver, out var compiledExpression, out _))
-            {
-                filter = IsTrue(compiledExpression);
-            }
-            else
-            {
-                filter = MessageLike();
-            }
-
-            if (filter is not null)
-            {
-                entries = entries.Where(x => filter(x.Event));
-            }
+            entries = entries.Where(x => filter(x.Event));
         }
         switch (sortOrder)
         {
@@ -110,31 +65,26 @@ public class LogSessionProvider(NameResolver nameResolver, IHubContext<LogHub> h
                 entries = entries.OrderBy(x => x.Timestamp);
                 break;
         }
+        // ReSharper disable PossibleMultipleEnumeration because we intentionally enumerate it twice, once for page page events, once for counts
         return new SearchLogEventsResponse(entries.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToArray(), new LogEventCounts(entries));
+        // ReSharper restore PossibleMultipleEnumeration
 
-        EventFilter? MessageLike()
-        {
-            var filterSearch = $"@m like '%{SerilogExpression.EscapeLikeExpressionContent(expression)}%' ci";
-            return SerilogExpression.TryCompile(filterSearch, out var compiledExpression, out _) ? IsTrue(compiledExpression) : null;
-        }
-
-        EventFilter IsTrue(CompiledExpression compiledExpression) =>
-            evt => ExpressionResult.IsTrue(compiledExpression(evt));
     }
 
     public void DeleteSession(Guid sessionId)
     {
-        var session = GetSession(sessionId);
-        session.Files.ForEach(x => x.Entries.Clear());
-        session.Files.Clear();
-        _sessions.Remove(sessionId);
-        var watchers = _watchers[sessionId];
+        var (logFiles, watchers) = GetSession(sessionId);
+        logFiles.Files.ForEach(x => x.Entries.Clear());
+        logFiles.Files.Clear();
         watchers.ForEach(x =>
         {
             x.EnableRaisingEvents = false;
             x.Dispose();
         });
         watchers.Clear();
-        _watchers.Remove(sessionId);
+        _sessions.Remove(sessionId);
     }
+
+    public void Dispose() =>
+        _sessions.Keys.ToList().ForEach(DeleteSession);
 }

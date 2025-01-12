@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClefViewer.API", "ClefViewer.API\ClefViewer.API.csproj", "{CA1ABD6D-4256-4342-A386-F68BB3637E45}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClefViewer.API.Tests", "ClefViewer.API.Tests\ClefViewer.API.Tests.csproj", "{8123675B-CD13-4A09-9FDB-A0D6C655FB05}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{CA1ABD6D-4256-4342-A386-F68BB3637E45}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CA1ABD6D-4256-4342-A386-F68BB3637E45}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CA1ABD6D-4256-4342-A386-F68BB3637E45}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8123675B-CD13-4A09-9FDB-A0D6C655FB05}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8123675B-CD13-4A09-9FDB-A0D6C655FB05}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8123675B-CD13-4A09-9FDB-A0D6C655FB05}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8123675B-CD13-4A09-9FDB-A0D6C655FB05}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
