@@ -128,17 +128,6 @@ async function waitForBackendAlive(): Promise<void> {
         },
     });
 
-    // Handle close button click to quit the app
-    loadingWindow.webContents.on('dom-ready', () => {
-        loadingWindow.webContents.executeJavaScript(`
-            document.addEventListener('click', (event) => {
-                if (event.target.classList.contains('close-btn')) {
-                    require('electron').ipcRenderer.send('quit-app');
-                }
-            });
-        `);
-    });
-
     // Set up IPC handler for quit app
     const quitHandler = () => {
         loadingWindow.close();
@@ -147,94 +136,20 @@ async function waitForBackendAlive(): Promise<void> {
     ipcMain.removeAllListeners('quit-app'); // Remove any existing listeners
     ipcMain.on('quit-app', quitHandler);
 
-    // Function to update the loading message
+    // Function to update the loading message via IPC
     const updateLoadingMessage = (attempt: number, status: string) => {
-        const loadingHtml = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <style>
-                    body {
-                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                        margin: 0;
-                        padding: 20px;
-                        background: #f0f0f0;
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        justify-content: center;
-                        height: 100vh;
-                        box-sizing: border-box;
-                        position: relative;
-                    }
-                    .close-btn {
-                        position: absolute;
-                        top: 10px;
-                        right: 15px;
-                        width: 20px;
-                        height: 20px;
-                        background: none;
-                        border: none;
-                        font-size: 16px;
-                        color: #999;
-                        cursor: pointer;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        border-radius: 50%;
-                        transition: all 0.2s ease;
-                    }
-                    .close-btn:hover {
-                        background: #e0e0e0;
-                        color: #666;
-                    }
-                    .spinner {
-                        border: 4px solid #f3f3f3;
-                        border-top: 4px solid #3498db;
-                        border-radius: 50%;
-                        width: 30px;
-                        height: 30px;
-                        animation: spin .5s linear infinite;
-                        margin-bottom: 15px;
-                    }
-                    @keyframes spin {
-                        0% { transform: rotate(0deg); }
-                        100% { transform: rotate(360deg); }
-                    }
-                    .message {
-                        text-align: center;
-                        color: #333;
-                        font-size: 14px;
-                        line-height: 1.4;
-                    }
-                    .attempt-info {
-                        color: #666;
-                        font-size: 12px;
-                        margin-top: 8px;
-                    }
-                    .status {
-                        margin-top: 5px;
-                        font-size: 12px;
-                        color: ${status.includes('Failed') ? '#e74c3c' : '#7f8c8d'};
-                    }
-                </style>
-            </head>
-            <body>
-                <button class="close-btn" title="Close application">×</button>
-                <div class="spinner"></div>
-                <div class="message">Starting backend service...</div>
-                <div class="attempt-info">Attempt ${attempt} of ${maxAttempts}</div>
-                <div class="status">${status}</div>
-            </body>
-            </html>
-        `;
-        return loadingWindow.loadURL(
-            `data:text/html;charset=utf-8,${encodeURIComponent(loadingHtml)}`,
-        );
+        loadingWindow.webContents.send('update-loading-message', {
+            attempt,
+            maxAttempts,
+            status,
+        });
     };
 
-    // Show initial loading state
-    await updateLoadingMessage(1, 'Connecting...');
+    // Load the HTML file from the correct path
+    const htmlPath = is.dev
+        ? join(__dirname, '../../src/main/loading-dialog.html')
+        : join(__dirname, 'loading-dialog.html');
+    await loadingWindow.loadFile(htmlPath);
     loadingWindow.show();
 
     try {
