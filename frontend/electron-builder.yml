@@ -43,8 +43,7 @@ linux:
 appImage:
     artifactName: ${name}-${version}.${ext}
 npmRebuild: false
-publish:
-    provider: generic
-    url: https://example.com/auto-updates
+# Disable auto-update for faster builds - set to null to prevent any update files
+publish: null
 electronDownload:
     mirror: https://npmmirror.com/mirrors/electron/
