@@ -1,0 +1,47 @@
+# Maintainer: azygis <your-email@example.com>
+
+pkgname=clef-viewer
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Compact Log Event Format Viewer - Desktop log file analyzer"
+arch=('x86_64')
+url="https://github.com/azygis/clef-viewer"
+license=('MIT')
+depends=('gtk3' 'libxss' 'gconf' 'libxtst' 'xdg-utils' 'libatspi' 'libnss')
+optdepends=()
+provides=('clef-viewer')
+conflicts=('clef-viewer')
+source=("https://github.com/azygis/clef-viewer/releases/download/v${pkgver}/clef-viewer-${pkgver}.AppImage")
+sha256sums=('__APPIMAGE_SHA256__')
+noextract=("clef-viewer-${pkgver}.AppImage")
+
+prepare() {
+    chmod +x "${srcdir}/clef-viewer-${pkgver}.AppImage"
+    "${srcdir}/clef-viewer-${pkgver}.AppImage" --appimage-extract
+}
+
+package() {
+    # Install the application
+    install -d "${pkgdir}/opt/clef-viewer"
+    cp -r "${srcdir}/squashfs-root/"* "${pkgdir}/opt/clef-viewer/"
+
+    # Create executable
+    install -d "${pkgdir}/usr/bin"
+    cat >"${pkgdir}/usr/bin/clef-viewer" <<'EOF'
+#!/bin/bash
+exec /opt/clef-viewer/clef-viewer "$@"
+EOF
+    chmod +x "${pkgdir}/usr/bin/clef-viewer"
+
+    # Install desktop file
+    install -Dm644 "${srcdir}/squashfs-root/clef-viewer.desktop" \
+        "${pkgdir}/usr/share/applications/clef-viewer.desktop"
+
+    # Install icon
+    install -Dm644 "${srcdir}/squashfs-root/clef-viewer.png" \
+        "${pkgdir}/usr/share/pixmaps/clef-viewer.png"
+
+    # Install license
+    install -Dm644 "${srcdir}/squashfs-root/LICENSE" \
+        "${pkgdir}/usr/share/licenses/clef-viewer/LICENSE"
+}

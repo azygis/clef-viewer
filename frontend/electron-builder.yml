@@ -18,18 +18,36 @@ asarUnpack:
     - resources/**
 win:
     executableName: CLEF-Viewer
+    target:
+        - target: nsis
+          arch: [x64]
+        - target: portable
+          arch: [x64]
+        - target: zip
+          arch: [x64]
 nsis:
     artifactName: ${name}-${version}-setup.${ext}
     shortcutName: ${productName}
     uninstallDisplayName: ${productName}
     createDesktopShortcut: always
+    oneClick: false
+    allowToChangeInstallationDirectory: true
+portable:
+    artifactName: ${name}-${version}-portable.${ext}
 linux:
     target:
-        - AppImage
-        - snap
-        - deb
-    maintainer: electronjs.org
+        - target: AppImage
+          arch: [x64]
+        - target: snap
+          arch: [x64]
+        - target: deb
+          arch: [x64]
+        - target: tar.gz
+          arch: [x64]
+    maintainer: azygis
     category: Utility
+    synopsis: Compact Log Event Format Viewer
+    description: A desktop application for viewing and analyzing CLEF (Compact Log Event Format) log files
 appImage:
     artifactName: ${name}-${version}.${ext}
 npmRebuild: false

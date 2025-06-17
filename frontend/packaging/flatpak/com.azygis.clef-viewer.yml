@@ -1,0 +1,41 @@
+app-id: com.azygis.clef-viewer
+runtime: org.freedesktop.Platform
+runtime-version: '22.08'
+sdk: org.freedesktop.Sdk
+base: org.electronjs.Electron2.BaseApp
+base-version: '22.08'
+command: clef-viewer
+separate-locales: false
+
+finish-args:
+    - --share=ipc
+    - --socket=x11
+    - --socket=wayland
+    - --socket=pulseaudio
+    - --share=network
+    - --filesystem=home:ro
+    - --filesystem=xdg-download:rw
+    - --filesystem=xdg-documents:rw
+    - --talk-name=org.freedesktop.Notifications
+    - --talk-name=org.kde.StatusNotifierWatcher
+    - --own-name=org.kde.StatusNotifierItem-*
+
+modules:
+    - name: clef-viewer
+      buildsystem: simple
+      build-commands:
+          - chmod +x clef-viewer-*.AppImage
+          - ./clef-viewer-*.AppImage --appimage-extract
+          - rm -rf squashfs-root/usr/lib/libwayland*
+          - cp -r squashfs-root/* /app/
+          - chmod +x /app/clef-viewer
+          - install -Dm644 com.azygis.clef-viewer.desktop /app/share/applications/com.azygis.clef-viewer.desktop
+          - install -Dm644 com.azygis.clef-viewer.png /app/share/icons/hicolor/512x512/apps/com.azygis.clef-viewer.png
+      sources:
+          - type: file
+            url: https://github.com/azygis/clef-viewer/releases/download/v1.0.0/clef-viewer-1.0.0.AppImage
+            sha256: __APPIMAGE_SHA256__
+          - type: file
+            path: com.azygis.clef-viewer.desktop
+          - type: file
+            path: com.azygis.clef-viewer.png

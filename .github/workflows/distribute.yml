@@ -1,0 +1,169 @@
+name: Update distribution packages and create release
+
+on:
+#  push:
+#    tags:
+#      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release"
+        required: true
+        default: "1.0.0"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-js-version: "18"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build using Docker (build.sh)
+        run: |
+          chmod +x build.sh
+          ./build.sh
+
+      - name: Calculate checksums
+        working-directory: frontend
+        run: |
+          cd dist
+          find . -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.tar.gz" -o -name "*.zip" | xargs sha256sum > ../checksums.txt
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            frontend/dist/*.exe
+            frontend/dist/*.AppImage
+            frontend/dist/*.deb
+            frontend/dist/*.tar.gz
+            frontend/dist/*.zip
+            frontend/checksums.txt
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Setup release files
+        run: |
+          mkdir -p release
+          cp build-artifacts/* release/ 2>/dev/null || true
+          ls -la release/
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: CLEF Viewer v${{ steps.version.outputs.version }}
+          body: |
+            # CLEF Viewer v${{ steps.version.outputs.version }}
+
+            ## Installation
+
+            ### Windows
+            - **Installer**: Download `clef-viewer-${{ steps.version.outputs.version }}-setup.exe`
+            - **Portable**: Download `clef-viewer-${{ steps.version.outputs.version }}-portable.exe`
+            - **Chocolatey**: `choco install clef-viewer`
+            - **Winget**: `winget install azygis.CLEFViewer`
+            - **Scoop**: `scoop install clef-viewer`
+
+            ### Linux
+            - **AppImage**: Download `clef-viewer-${{ steps.version.outputs.version }}.AppImage`
+            - **Debian/Ubuntu**: Download `clef-viewer_${{ steps.version.outputs.version }}_amd64.deb`
+            - **Portable**: Extract `clef-viewer-${{ steps.version.outputs.version }}.tar.gz`
+            - **Snap**: `snap install clef-viewer`
+            - **Flatpak**: `flatpak install com.azygis.clef-viewer`
+            - **Arch Linux (AUR)**: `yay -S clef-viewer`
+
+            ## Changes
+            - Initial release
+            - CLEF log file viewing and analysis
+            - Filtering and search capabilities
+            - Cross-platform support (Windows, Linux)
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for file in release/*; do
+            if [ -f "$file" ]; then
+              echo "Uploading $file"
+              gh release upload ${{ github.ref_name }} "$file"
+            fi
+          done
+
+  update-package-managers:
+    needs: release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get version
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Update package configurations
+        run: |
+          # This would run the release script to update package manager configs
+          # chmod +x frontend/scripts/release.sh
+          # cd frontend && ./scripts/release.sh ${{ steps.version.outputs.version }}
+          echo "Package manager configurations would be updated here"
+
+      - name: Create PR for Winget
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Update CLEF Viewer to v${{ steps.version.outputs.version }}
+          title: Update CLEF Viewer to v${{ steps.version.outputs.version }}
+          body: |
+            This PR updates CLEF Viewer package configurations for version ${{ steps.version.outputs.version }}.
+
+            Updated configurations:
+            - Chocolatey
+            - Winget
+            - Scoop
+            - Snap
+            - AUR
+            - Flatpak
+          branch: update-packages-v${{ steps.version.outputs.version }}
+          delete-branch: true

@@ -1,0 +1,28 @@
+PackageIdentifier: azygis.CLEFViewer
+PackageVersion: 1.0.0
+PackageLocale: en-US
+Publisher: azygis
+PublisherUrl: https://github.com/azygis
+PublisherSupportUrl: https://github.com/azygis/clef-viewer/issues
+Author: azygis
+PackageName: CLEF Viewer
+PackageUrl: https://github.com/azygis/clef-viewer
+License: MIT
+LicenseUrl: https://github.com/azygis/clef-viewer/blob/main/LICENSE
+Copyright: Copyright (c) 2025 azygis
+ShortDescription: Compact Log Event Format Viewer
+Description: A desktop application for viewing and analyzing CLEF (Compact Log Event Format) log files. Provides an intuitive interface to browse, filter, and search through structured log data with support for Serilog and other structured logging frameworks.
+Moniker: clef-viewer
+Tags:
+    - logging
+    - clef
+    - log-analysis
+    - structured-logging
+    - serilog
+    - viewer
+    - desktop
+    - electron
+ReleaseNotes: Initial release of CLEF Viewer
+ReleaseNotesUrl: https://github.com/azygis/clef-viewer/releases
+ManifestType: defaultLocale
+ManifestVersion: 1.2.0

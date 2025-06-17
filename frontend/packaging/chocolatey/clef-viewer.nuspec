@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+    <metadata>
+        <id>clef-viewer</id>
+        <version>1.0.0</version>
+        <title>CLEF Viewer</title>
+        <authors>azygis</authors>
+        <owners>azygis</owners>
+        <description>A desktop application for viewing and analyzing CLEF (Compact Log Event Format) log files. Provides an intuitive interface to browse, filter, and search through structured log data.</description>
+        <summary>Compact Log Event Format Viewer - Desktop log file analyzer</summary>
+        <projectUrl>https://github.com/azygis/clef-viewer</projectUrl>
+        <packageSourceUrl>https://github.com/azygis/clef-viewer</packageSourceUrl>
+        <docsUrl>https://github.com/azygis/clef-viewer/blob/main/README.md</docsUrl>
+        <bugTrackerUrl>https://github.com/azygis/clef-viewer/issues</bugTrackerUrl>
+        <tags>logging clef viewer log-analysis structured-logging serilog</tags>
+        <copyright>Copyright (c) 2025 azygis</copyright>
+        <licenseUrl>https://github.com/azygis/clef-viewer/blob/main/LICENSE</licenseUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <releaseNotes>https://github.com/azygis/clef-viewer/releases</releaseNotes>
+    </metadata>
+    <files>
+        <file src="tools\**" target="tools" />
+    </files>
+</package>

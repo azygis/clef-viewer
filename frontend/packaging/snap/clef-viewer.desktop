@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=CLEF Viewer
+Comment=Compact Log Event Format Viewer
+Exec=clef-viewer
+Icon=${SNAP}/usr/share/pixmaps/clef-viewer.png
+Terminal=false
+Type=Application
+Categories=Development;Utility;
+StartupNotify=true
+MimeType=application/json;text/plain;

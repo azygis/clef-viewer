@@ -1,0 +1,42 @@
+name: clef-viewer
+version: '1.0.0'
+summary: CLEF Viewer
+description: |
+    A desktop application for viewing and analyzing CLEF (Compact Log Event Format) log files.
+    Provides an intuitive interface to browse, filter, and search through structured log data
+    with support for Serilog and other structured logging frameworks.
+
+grade: stable
+confinement: strict
+base: core20
+
+apps:
+    clef-viewer:
+        command: clef-viewer --no-sandbox
+        desktop: usr/share/applications/clef-viewer.desktop
+        environment:
+            DISABLE_WAYLAND: 1
+        plugs:
+            - home
+            - network
+            - opengl
+            - x11
+            - desktop
+            - desktop-legacy
+            - wayland
+
+parts:
+    clef-viewer:
+        plugin: dump
+        source: https://github.com/azygis/clef-viewer/releases/download/v1.0.0/clef-viewer-1.0.0.AppImage
+        source-type: file
+        override-build: |
+            chmod +x $SNAPCRAFT_PART_SRC/clef-viewer-1.0.0.AppImage
+            $SNAPCRAFT_PART_SRC/clef-viewer-1.0.0.AppImage --appimage-extract
+            cp -r squashfs-root/* $SNAPCRAFT_PART_INSTALL/
+
+    desktop-file:
+        plugin: dump
+        source: packaging/snap/
+        organize:
+            clef-viewer.desktop: usr/share/applications/clef-viewer.desktop
