@@ -42,12 +42,23 @@ linux:
           arch: [x64]
         - target: deb
           arch: [x64]
+        - target: rpm
+          arch: [x64]
         - target: tar.gz
           arch: [x64]
     maintainer: azygis
     category: Utility
     synopsis: Compact Log Event Format Viewer
     description: A desktop application for viewing and analyzing CLEF (Compact Log Event Format) log files
+rpm:
+    artifactName: ${name}-${version}.${arch}.${ext}
+    summary: Compact Log Event Format Viewer
+    license: MIT
+    group: Applications/System
+    requires:
+        - libgtk-3-0
+        - libxss1
+        - libasound2
 appImage:
     artifactName: ${name}-${version}.${ext}
 npmRebuild: false

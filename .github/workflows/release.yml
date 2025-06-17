@@ -1,0 +1,123 @@
+name: Build and Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from release
+        id: version
+        run: |
+          # Extract version from release tag (remove 'v' prefix if present)
+          VERSION="${{ github.event.release.tag_name }}"
+          VERSION=${VERSION#v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Update package.json version
+        working-directory: frontend
+        run: |
+          # Update version in package.json
+          npm version ${{ steps.version.outputs.version }} --no-git-tag-version
+          echo "Updated package.json to version ${{ steps.version.outputs.version }}"
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Update backend version
+        run: |
+          # Update version in backend project file
+          sed -i "s/<Version>.*<\/Version>/<Version>${{ steps.version.outputs.version }}<\/Version>/" backend/ClefViewer/ClefViewer.API/ClefViewer.API.csproj
+          # If no Version tag exists, add it
+          if ! grep -q "<Version>" backend/ClefViewer/ClefViewer.API/ClefViewer.API.csproj; then
+            sed -i "s/<PropertyGroup>/<PropertyGroup>\n    <Version>${{ steps.version.outputs.version }}<\/Version>/" backend/ClefViewer/ClefViewer.API/ClefViewer.API.csproj
+          fi
+          echo "Updated backend version to ${{ steps.version.outputs.version }}"
+
+      - name: Build using Docker (build.sh)
+        run: |
+          chmod +x build.sh
+          ./build.sh
+
+      - name: Calculate checksums
+        working-directory: frontend
+        run: |
+          cd dist
+          find . -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" -o -name "*.tar.gz" -o -name "*.zip" | xargs sha256sum > checksums.txt
+
+      - name: Upload Release Assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd frontend/dist
+
+          # Upload all build artifacts to the release
+          for file in *.exe *.AppImage *.deb *.rpm *.tar.gz *.zip; do
+            if [ -f "$file" ]; then
+              echo "Uploading $file"
+              gh release upload ${{ github.event.release.tag_name }} "$file" --clobber
+            fi
+          done
+
+          # Upload checksums
+          if [ -f "checksums.txt" ]; then
+            echo "Uploading checksums.txt"
+            gh release upload ${{ github.event.release.tag_name }} "checksums.txt" --clobber
+          fi
+
+      - name: Update release body with installation instructions
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get current release body
+          CURRENT_BODY=$(gh release view ${{ github.event.release.tag_name }} --json body --jq '.body')
+          
+          # Append installation instructions to existing content
+          INSTALLATION_SECTION="
+
+          ## Installation
+
+          ### Windows
+          - **Installer**: Download \`clef-viewer-${{ steps.version.outputs.version }}-setup.exe\`
+          - **Portable**: Download \`clef-viewer-${{ steps.version.outputs.version }}-portable.exe\`
+          - **Chocolatey**: \`choco install clef-viewer\`
+          - **Winget**: \`winget install azygis.CLEFViewer\`
+          - **Scoop**: \`scoop install clef-viewer\`
+
+          ### Linux
+          - **AppImage**: Download \`clef-viewer-${{ steps.version.outputs.version }}.AppImage\`
+          - **Debian/Ubuntu**: Download \`clef-viewer_${{ steps.version.outputs.version }}_amd64.deb\`
+          - **RPM (Fedora/RHEL/CentOS)**: Download \`clef-viewer-${{ steps.version.outputs.version }}.x86_64.rpm\`
+          - **Portable**: Extract \`clef-viewer-${{ steps.version.outputs.version }}.tar.gz\`
+          - **Snap**: \`snap install clef-viewer\`
+          - **Flatpak**: \`flatpak install com.azygis.clef-viewer\`
+          - **Arch Linux (AUR)**: \`yay -S clef-viewer\`
+
+          ## Checksums
+          See \`checksums.txt\` for SHA256 checksums of all files."
+          
+          # Combine existing content with installation instructions
+          COMBINED_BODY="${CURRENT_BODY}${INSTALLATION_SECTION}"
+          
+          # Update release with combined content
+          gh release edit ${{ github.event.release.tag_name }} --notes "$COMBINED_BODY"
+          echo "✅ Appended installation instructions to existing release notes"
