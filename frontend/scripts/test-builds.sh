@@ -56,7 +56,7 @@ log_success "Previous builds cleaned"
 
 # Test basic build
 log_info "Testing basic build"
-npm run build
+yarn build
 log_success "Basic build completed"
 
 # Test full build using Docker

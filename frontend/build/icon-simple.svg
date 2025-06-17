@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256"
+    xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#1976D2"/>
+            <stop offset="100%" style="stop-color:#1565C0"/>
+        </linearGradient>
+        <linearGradient id="doc" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#FFFFFF"/>
+            <stop offset="100%" style="stop-color:#F8F9FA"/>
+        </linearGradient>
+    </defs>
+
+    <!-- Background -->
+    <rect width="256" height="256" rx="24" fill="url(#bg)"/>
+
+    <!-- Document -->
+    <rect x="48" y="40" width="120" height="160" rx="8" fill="url(#doc)" stroke="#E0E0E0" stroke-width="1"/>
+
+    <!-- Folded corner -->
+    <path d="M 148 40 L 168 40 L 168 60 L 148 60 Z" fill="#E0E0E0"/>
+    <path d="M 148 40 L 168 60 L 148 60 Z" fill="#BDBDBD"/>
+
+    <!-- Log lines with semantic colors -->
+    <rect x="60" y="70" width="80" height="6" rx="3" fill="#F44336"/>
+    <rect x="60" y="85" width="60" height="6" rx="3" fill="#FF9800"/>
+    <rect x="60" y="100" width="90" height="6" rx="3" fill="#2196F3"/>
+    <rect x="60" y="115" width="70" height="6" rx="3" fill="#4CAF50"/>
+    <rect x="60" y="130" width="85" height="6" rx="3" fill="#9C27B0"/>
+    <rect x="60" y="145" width="75" height="6" rx="3" fill="#607D8B"/>
+    <rect x="60" y="160" width="80" height="6" rx="3" fill="#795548"/>
+
+    <!-- JSON brackets -->
+    <text x="60" y="185" font-family="monospace" font-size="16" font-weight="bold" fill="#37474F">{</text>
+    <text x="140" y="190" font-family="monospace" font-size="16" font-weight="bold" fill="#37474F">}</text>
+
+    <!-- Magnifying glass -->
+    <circle cx="200" cy="80" r="20" fill="none" stroke="#FF9800" stroke-width="4"/>
+    <circle cx="200" cy="80" r="12" fill="none" stroke="#FF9800" stroke-width="2"/>
+    <line x1="214" y1="94" x2="226" y2="106" stroke="#FF9800" stroke-width="4" stroke-linecap="round"/>
+
+    <!-- Analysis gear -->
+    <circle cx="80" cy="220" r="12" fill="#FF9800"/>
+    <circle cx="80" cy="220" r="6" fill="#FFFFFF"/>
+    <rect x="78" y="206" width="4" height="8" fill="#FF9800"/>
+    <rect x="78" y="226" width="4" height="8" fill="#FF9800"/>
+    <rect x="66" y="218" width="8" height="4" fill="#FF9800"/>
+    <rect x="86" y="218" width="8" height="4" fill="#FF9800"/>
+</svg>

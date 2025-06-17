@@ -1,6 +1,6 @@
 import { electronApp, is, optimizer } from '@electron-toolkit/utils';
 import { ChildProcess, spawn } from 'child_process';
-import { app, BrowserWindow, globalShortcut, ipcMain } from 'electron';
+import { app, BrowserWindow, globalShortcut } from 'electron';
 import { join } from 'path';
 import icon from '../../resources/icon.png?asset';
 import { startEventListeners } from './events';
@@ -16,22 +16,40 @@ function createWindow(): void {
         ...(process.platform === 'linux' ? { icon } : {}),
         webPreferences: {
             preload: join(__dirname, '../preload/index.js'),
+            nodeIntegration: true,
+            contextIsolation: false,
         },
     });
 
-    mainWindow.on('ready-to-show', () => mainWindow.show());
+    // Show loading screen first
+    const loadingHtmlPath = is.dev
+        ? join(__dirname, '../../src/main/loading-dialog.html')
+        : join(__dirname, 'loading-dialog.html');
 
-    // HMR for renderer base on electron-vite cli.
-    // Load the remote URL for development or the local html file for production.
-    if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-        mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
-    } else {
-        mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
-    }
+    mainWindow.loadFile(loadingHtmlPath);
+
+    mainWindow.once('ready-to-show', async () => {
+        mainWindow.show();
+
+        try {
+            // Wait for backend to be ready
+            await waitForBackendAlive(mainWindow);
+
+            // Backend is ready, load the main application
+            if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+                mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
+            } else {
+                mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
+            }
+        } catch (error) {
+            console.error('Failed to start backend:', error);
+        }
+    });
+
     win = mainWindow;
 }
 
-app.whenReady().then(async () => {
+app.whenReady().then(() => {
     electronApp.setAppUserModelId('com.azygis.clef-viewer');
 
     app.on('browser-window-created', (_, window) => {
@@ -40,13 +58,6 @@ app.whenReady().then(async () => {
 
     startEventListeners();
     startBackend();
-    // Wait for backend to be alive by polling the health endpoint
-    try {
-        await waitForBackendAlive();
-    } catch (error) {
-        console.error('Failed to wait for backend:', error);
-    }
-
     registerKeyboardShortcuts();
     createWindow();
 });
@@ -98,85 +109,47 @@ function registerKeyboardShortcuts() {
     });
 }
 
-async function waitForBackendAlive(): Promise<void> {
+async function waitForBackendAlive(loadingWindow?: BrowserWindow): Promise<void> {
     const maxAttempts = 60; // 30 seconds / 500ms = 60 attempts
     const delayMs = 500;
     const backendUrl = 'http://localhost:61455/live';
 
-    // Create a loading dialog
-    const loadingWindow = new BrowserWindow({
-        width: 350,
-        height: 180,
-        show: false,
-        frame: false,
-        alwaysOnTop: false,
-        resizable: false,
-        skipTaskbar: true,
-        webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
-        },
-    });
-
-    // Set up IPC handler for quit app
-    const quitHandler = () => {
-        loadingWindow.close();
-        app.quit();
-    };
-    ipcMain.removeAllListeners('quit-app'); // Remove any existing listeners
-    ipcMain.on('quit-app', quitHandler);
-
-    // Function to update the loading message via IPC
+    // Function to update the loading message
     const updateLoadingMessage = (attempt: number, status: string) => {
-        loadingWindow.webContents.send('update-loading-message', {
-            attempt,
-            maxAttempts,
-            status,
-        });
+        if (loadingWindow && !loadingWindow.isDestroyed()) {
+            loadingWindow.webContents.send('update-loading-message', {
+                attempt,
+                maxAttempts,
+                status,
+            });
+        }
     };
 
-    // Load the HTML file from the correct path
-    const htmlPath = is.dev
-        ? join(__dirname, '../../src/main/loading-dialog.html')
-        : join(__dirname, 'loading-dialog.html');
-    await loadingWindow.loadFile(htmlPath);
-    loadingWindow.show();
-
-    try {
-        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-            try {
-                const response = await fetch(backendUrl, { method: 'HEAD' });
-                if (response.status === 200) {
-                    await updateLoadingMessage(attempt, 'Backend connected successfully!');
-                    // Brief delay to show success message
-                    await new Promise((resolve) => setTimeout(resolve, 300));
-                    loadingWindow.close();
-                    return; // Backend is alive, continue
-                }
-                await updateLoadingMessage(attempt, `Failed: HTTP ${response.status}`);
-            } catch (error) {
-                // Connection failed, continue trying
-                const errorMessage =
-                    error instanceof Error
-                        ? `${error.message}: ${error.cause}`
-                        : 'Connection failed';
-                await updateLoadingMessage(attempt, `Failed: ${errorMessage}`);
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            const response = await fetch(backendUrl, { method: 'HEAD' });
+            if (response.status === 200) {
+                updateLoadingMessage(attempt, 'Backend connected successfully!');
+                // Brief delay to show success message
+                await new Promise((resolve) => setTimeout(resolve, 300));
+                return; // Backend is alive, exit immediately
             }
-
-            if (attempt < maxAttempts) {
-                await new Promise((resolve) => setTimeout(resolve, delayMs));
-            }
+            updateLoadingMessage(attempt, `Failed: HTTP ${response.status}`);
+        } catch (error) {
+            // Connection failed, continue trying
+            const errorMessage = error instanceof Error ? `${error.message}` : 'Connection failed';
+            updateLoadingMessage(attempt, `Connecting... (${errorMessage})`);
         }
 
-        // If we get here, all attempts failed
-        loadingWindow.close();
-        const { dialog } = await import('electron');
-        dialog.showErrorBox(
-            'Backend Connection Error',
-            'Failed to connect to the backend after 10 seconds. The application may not work correctly.',
-        );
-    } catch (error) {
-        loadingWindow.close();
-        throw error;
+        if (attempt < maxAttempts) {
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
     }
+
+    // If we get here, all attempts failed
+    const { dialog } = await import('electron');
+    dialog.showErrorBox(
+        'Backend Connection Error',
+        'Failed to connect to the backend after 30 seconds. The application may not work correctly.',
+    );
 }

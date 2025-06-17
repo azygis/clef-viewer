@@ -1,7 +1,12 @@
 #!/bin/bash
 
 # Version Update Script
-# Updates version in both package.json and backend project file
+# Updates version in both package.json and backend project file (for development)
+#
+# NOTE: For production builds, use BUILD_VERSION environment variable instead:
+#   BUILD_VERSION=1.2.3 ./build.sh
+#
+# This script is primarily for development version updates and testing.
 
 set -e
 
@@ -11,6 +16,9 @@ if [[ -z "$VERSION" ]]; then
     echo "❌ Version is required"
     echo "Usage: $0 <version>"
     echo "Example: $0 1.2.3"
+    echo ""
+    echo "For production builds, use BUILD_VERSION environment variable:"
+    echo "  BUILD_VERSION=1.2.3 ./build.sh"
     exit 1
 fi
 
@@ -43,11 +51,11 @@ fi
 # Update package.json version
 log_info "Updating package.json version to $VERSION"
 cd frontend
-if command -v npm >/dev/null 2>&1; then
-    npm version $VERSION --no-git-tag-version
+if command -v yarn >/dev/null 2>&1; then
+    yarn version --new-version $VERSION --no-git-tag-version
     log_success "Updated package.json to version $VERSION"
 else
-    log_warning "npm not found, skipping package.json version update"
+    log_warning "yarn not found, skipping package.json version update"
 fi
 cd ..
 

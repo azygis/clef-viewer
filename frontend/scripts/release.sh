@@ -73,9 +73,9 @@ check_docker() {
     log_success "Docker is available and running"
 }
 
-# Build all distributions using the main build script
+# Build all distributions using the main build script with version
 build_distributions() {
-    log_info "Building all distributions using build.sh (Docker + Wine)"
+    log_info "Building all distributions using build.sh (Docker + Wine) with version $VERSION"
 
     # Change to the root directory where build.sh is located
     cd ..
@@ -88,13 +88,14 @@ build_distributions() {
     # Make sure build.sh is executable
     chmod +x build.sh
 
-    # Run the main build script
+    # Run the main build script with version as environment variable
+    export BUILD_VERSION="$VERSION"
     ./build.sh
 
     # Return to frontend directory
     cd frontend
 
-    log_success "All distributions built using Docker"
+    log_success "All distributions built using Docker with version $VERSION"
 }
 
 # Update Chocolatey package
@@ -253,10 +254,7 @@ main() {
     # Check Docker availability
     check_docker
 
-    # Update version
-    update_version
-
-    # Build distributions
+    # Build distributions with version
     build_distributions
 
     # Update package manager configurations

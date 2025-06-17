@@ -46,39 +46,20 @@ fi
 
 log_success "Docker is available and running"
 
-# Update package.json version
-log_info "Updating package.json version to $VERSION"
-cd frontend
-if command -v npm >/dev/null 2>&1; then
-    npm version $VERSION --no-git-tag-version
-    log_success "Updated package.json to version $VERSION"
-else
-    log_warning "npm not found, skipping package.json version update"
-fi
+log_info "Testing build with version $VERSION"
 
-# Install frontend dependencies
+# Install frontend dependencies first
 log_info "Installing frontend dependencies"
-npm ci
+cd frontend
+yarn install --frozen-lockfile
 cd ..
 log_success "Dependencies installed"
 
-# Update backend version
-log_info "Updating backend version to $VERSION"
-if [[ -f "backend/ClefViewer/ClefViewer.API/ClefViewer.API.csproj" ]]; then
-    # Update version in backend project file
-    sed -i "s/<Version>.*<\/Version>/<Version>$VERSION<\/Version>/" backend/ClefViewer/ClefViewer.API/ClefViewer.API.csproj
-
-    # If no Version tag exists, add it
-    if ! grep -q "<Version>" backend/ClefViewer/ClefViewer.API/ClefViewer.API.csproj; then
-        sed -i "s/<PropertyGroup>/<PropertyGroup>\n    <Version>$VERSION<\/Version>/" backend/ClefViewer/ClefViewer.API/ClefViewer.API.csproj
-    fi
-    log_success "Updated backend version to $VERSION"
-else
-    log_warning "Backend project file not found"
-fi
-
-# Build application
-log_info "Building application using build.sh"
+# Build using environment variable (no file modifications)
+log_info "Building application using build.sh with BUILD_VERSION=$VERSION"
+export BUILD_VERSION="$VERSION"
+chmod +x build.sh
+./build.sh
 chmod +x build.sh
 ./build.sh
 log_success "Application built successfully"
@@ -92,7 +73,7 @@ log_success "Checksums generated"
 # List built files
 echo ""
 echo "📦 Built files ready for release:"
-ls -la *.exe *.AppImage *.deb *.tar.gz *.zip checksums.txt 2>/dev/null || echo "No files found"
+ls -la *.exe *.AppImage *.deb *.rpm *.tar.gz *.zip *.snap checksums.txt 2>/dev/null || echo "No files found"
 
 echo ""
 log_success "Release build test completed for version $VERSION!"

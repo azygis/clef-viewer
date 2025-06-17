@@ -24,36 +24,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "18"
-          cache: "npm"
-          cache-dependency-path: frontend/package-lock.json
+          cache: "yarn"
+          cache-dependency-path: frontend/yarn.lock
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "8.0.x"
 
-      - name: Update package.json version
-        working-directory: frontend
-        run: |
-          # Update version in package.json
-          npm version ${{ steps.version.outputs.version }} --no-git-tag-version
-          echo "Updated package.json to version ${{ steps.version.outputs.version }}"
-
       - name: Install frontend dependencies
         working-directory: frontend
-        run: npm ci
+        run: yarn install --frozen-lockfile
 
-      - name: Update backend version
-        run: |
-          # Update version in backend project file
-          sed -i "s/<Version>.*<\/Version>/<Version>${{ steps.version.outputs.version }}<\/Version>/" backend/ClefViewer/ClefViewer.API/ClefViewer.API.csproj
-          # If no Version tag exists, add it
-          if ! grep -q "<Version>" backend/ClefViewer/ClefViewer.API/ClefViewer.API.csproj; then
-            sed -i "s/<PropertyGroup>/<PropertyGroup>\n    <Version>${{ steps.version.outputs.version }}<\/Version>/" backend/ClefViewer/ClefViewer.API/ClefViewer.API.csproj
-          fi
-          echo "Updated backend version to ${{ steps.version.outputs.version }}"
-
-      - name: Build using Docker (build.sh)
+      - name: Build using Docker with version
+        env:
+          BUILD_VERSION: ${{ steps.version.outputs.version }}
         run: |
           chmod +x build.sh
           ./build.sh

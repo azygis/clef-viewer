@@ -2,6 +2,7 @@ appId: com.azygis.clef-viewer
 productName: Compact Log Event Format Viewer
 directories:
     buildResources: build
+icon: build/icon.png
 files:
     - '!**/.vscode/*'
     - '!src/*'
@@ -18,6 +19,7 @@ asarUnpack:
     - resources/**
 win:
     executableName: CLEF-Viewer
+    artifactName: clef-viewer-${version}-${arch}.${ext}
     target:
         - target: nsis
           arch: [x64]
@@ -26,15 +28,16 @@ win:
         - target: zip
           arch: [x64]
 nsis:
-    artifactName: ${name}-${version}-setup.${ext}
+    artifactName: clef-viewer-${version}-${arch}-setup.${ext}
     shortcutName: ${productName}
     uninstallDisplayName: ${productName}
     createDesktopShortcut: always
     oneClick: false
     allowToChangeInstallationDirectory: true
 portable:
-    artifactName: ${name}-${version}-portable.${ext}
+    artifactName: clef-viewer-${version}-${arch}-portable.${ext}
 linux:
+    artifactName: clef-viewer-${version}-${arch}.${ext}
     target:
         - target: AppImage
           arch: [x64]
@@ -47,20 +50,29 @@ linux:
         - target: tar.gz
           arch: [x64]
     maintainer: azygis
-    category: Utility
+    category: Development
+    synopsis: Compact Log Event Format Viewer
+    description: A desktop application for viewing and analyzing Compact Log Event Format (CLEF) files with syntax highlighting, filtering, and search capabilities.
+    desktop:
+        Name: CLEF Viewer
+        Comment: Compact Log Event Format Viewer
+        Icon: clef-viewer
+        MimeType: application/x-clef;text/x-clef;application/json;
+        Categories: System;Utility;Development;
+        Keywords: log;viewer;clef;json;analysis;debug;
+        StartupNotify: true
+        StartupWMClass: clef-viewer
+deb:
+    artifactName: clef-viewer-${version}-${arch}.${ext}
+rpm:
+    artifactName: clef-viewer-${version}-${arch}.${ext}
     synopsis: Compact Log Event Format Viewer
     description: A desktop application for viewing and analyzing CLEF (Compact Log Event Format) log files
-rpm:
-    artifactName: ${name}-${version}.${arch}.${ext}
-    summary: Compact Log Event Format Viewer
-    license: MIT
-    group: Applications/System
-    requires:
-        - libgtk-3-0
-        - libxss1
-        - libasound2
+    category: Applications/System
+snap:
+    artifactName: clef-viewer-${version}-${arch}.${ext}
 appImage:
-    artifactName: ${name}-${version}.${ext}
+    artifactName: clef-viewer-${version}-${arch}.${ext}
 npmRebuild: false
 # Disable auto-update for faster builds - set to null to prevent any update files
 publish: null

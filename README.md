@@ -84,10 +84,10 @@ git clone https://github.com/azygis/clef-viewer.git
 cd clef-viewer
 
 # Install dependencies
-cd frontend && npm install
+cd frontend && yarn install
 
 # Start development server
-npm run dev
+yarn dev
 ```
 
 ### Building
