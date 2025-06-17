@@ -90,34 +90,30 @@ jobs:
         run: |
           # Get current release body
           CURRENT_BODY=$(gh release view ${{ github.event.release.tag_name }} --json body --jq '.body')
-          
+
           # Append installation instructions to existing content
           INSTALLATION_SECTION="
 
           ## Installation
 
           ### Windows
-          - **Installer**: Download \`clef-viewer-${{ steps.version.outputs.version }}-setup.exe\`
-          - **Portable**: Download \`clef-viewer-${{ steps.version.outputs.version }}-portable.exe\`
-          - **Chocolatey**: \`choco install clef-viewer\`
-          - **Winget**: \`winget install azygis.CLEFViewer\`
-          - **Scoop**: \`scoop install clef-viewer\`
+          - **Installer** (recommended): Download the \`.exe\` installer
+          - **Portable**: Download the portable \`.exe\` version
 
           ### Linux
-          - **AppImage**: Download \`clef-viewer-${{ steps.version.outputs.version }}.AppImage\`
-          - **Debian/Ubuntu**: Download \`clef-viewer_${{ steps.version.outputs.version }}_amd64.deb\`
-          - **RPM (Fedora/RHEL/CentOS)**: Download \`clef-viewer-${{ steps.version.outputs.version }}.x86_64.rpm\`
-          - **Portable**: Extract \`clef-viewer-${{ steps.version.outputs.version }}.tar.gz\`
-          - **Snap**: \`snap install clef-viewer\`
-          - **Flatpak**: \`flatpak install com.azygis.clef-viewer\`
-          - **Arch Linux (AUR)**: \`yay -S clef-viewer\`
+          - **AppImage** (recommended): Download the \`.AppImage\` file
+          - **Debian/Ubuntu**: Download the \`.deb\` package
+          - **Fedora/RHEL/CentOS**: Download the \`.rpm\` package
+          - **Portable**: Download the \`.tar.gz\` archive
+
+          **Note**: Package manager support (Chocolatey, Winget, Snap, Flatpak, etc.) is planned for future releases.
 
           ## Checksums
           See \`checksums.txt\` for SHA256 checksums of all files."
-          
+
           # Combine existing content with installation instructions
           COMBINED_BODY="${CURRENT_BODY}${INSTALLATION_SECTION}"
-          
+
           # Update release with combined content
           gh release edit ${{ github.event.release.tag_name }} --notes "$COMBINED_BODY"
           echo "✅ Appended installation instructions to existing release notes"
