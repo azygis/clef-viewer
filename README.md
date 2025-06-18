@@ -83,21 +83,19 @@ CLEF (Compact Log Event Format) is a JSON-based log file format that's particula
 git clone https://github.com/azygis/clef-viewer.git
 cd clef-viewer
 
-# Install dependencies
-cd frontend && yarn install
+# Start backend
+cd backend/ClefViewer.API
+dotnet run
 
-# Start development server
-yarn dev
+# Install UI dependencies and start dev server
+cd frontend && yarn install && yarn dev
 ```
 
 ### Building
 
 ```bash
-# Build for current platform
+# Build all platforms
 ./build.sh
-
-# Test builds
-./scripts/test-release.sh
 ```
 
 ## 🏗️ Architecture
@@ -110,9 +108,9 @@ yarn dev
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+2. Create your feature branch (`git checkout -b feature/some-feature`)
+3. Commit your changes (`git commit -m 'Add some feature'`)
+4. Push to the branch (`git push origin feature/some-feature`)
 5. Open a Pull Request
 
 ## 📄 License
