@@ -19,7 +19,7 @@ public sealed class FileSystemHandler : IFileSystemHandler
 
     public async Task<long> ProcessStreamAsync(string path, long streamPosition, Action<StreamReader> reader)
     {
-        await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         stream.Seek(streamPosition, SeekOrigin.Begin);
         using var streamReader = new StreamReader(stream, leaveOpen: true);
         reader(streamReader);
