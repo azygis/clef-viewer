@@ -11,7 +11,7 @@ files:
     - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
     - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 extraResources:
-    from: '../publish/${os}'
+    from: '../publish/${os}-${arch}'
     to: 'backend'
     filter:
         - '**/*'
@@ -19,7 +19,7 @@ asarUnpack:
     - resources/**
 win:
     executableName: CLEF-Viewer
-    artifactName: clef-viewer-${version}-${arch}.${ext}
+    artifactName: clef-viewer-${version}-windows-${arch}.${ext}
     target:
         - target: nsis
           arch: [x64]
@@ -28,16 +28,27 @@ win:
         - target: zip
           arch: [x64]
 nsis:
-    artifactName: clef-viewer-${version}-${arch}-setup.${ext}
+    artifactName: clef-viewer-${version}-windows-${arch}-setup.${ext}
     shortcutName: ${productName}
     uninstallDisplayName: ${productName}
     createDesktopShortcut: always
     oneClick: false
     allowToChangeInstallationDirectory: true
 portable:
-    artifactName: clef-viewer-${version}-${arch}-portable.${ext}
+    artifactName: clef-viewer-${version}-windows-${arch}-portable.${ext}
+mac:
+    icon: build/icon.icns
+    artifactName: clef-viewer-${version}-macos-${arch}.${ext}
+    target:
+        - target: zip
+          arch: [x64, arm64]
+    category: public.app-category.developer-tools
+    hardenedRuntime: true
+    gatekeeperAssess: false
+    entitlements: null
+    entitlementsInherit: null
 linux:
-    artifactName: clef-viewer-${version}-${arch}.${ext}
+    artifactName: clef-viewer-${version}-linux-${arch}.${ext}
     target:
         - target: AppImage
           arch: [x64]
@@ -63,16 +74,16 @@ linux:
         StartupNotify: true
         StartupWMClass: clef-viewer
 deb:
-    artifactName: clef-viewer-${version}-${arch}.${ext}
+    artifactName: clef-viewer-${version}-linux-${arch}.${ext}
 rpm:
-    artifactName: clef-viewer-${version}-${arch}.${ext}
+    artifactName: clef-viewer-${version}-linux-${arch}.${ext}
     synopsis: Compact Log Event Format Viewer
     description: A desktop application for viewing and analyzing CLEF (Compact Log Event Format) log files
     category: Applications/System
 snap:
-    artifactName: clef-viewer-${version}-${arch}.${ext}
+    artifactName: clef-viewer-${version}-linux-${arch}.${ext}
 appImage:
-    artifactName: clef-viewer-${version}-${arch}.${ext}
+    artifactName: clef-viewer-${version}-linux-${arch}.${ext}
 npmRebuild: false
 # Disable auto-update for faster builds - set to null to prevent any update files
 publish: null

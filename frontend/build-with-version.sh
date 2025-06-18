@@ -29,7 +29,7 @@ if [[ -n "$BUILD_VERSION" ]]; then
 
     # Run electron-builder with explicit no publishing
     echo "📦 Running electron-builder..."
-    yarn electron-builder --linux --win --publish=never
+    yarn electron-builder --linux --win --mac --publish=never
 
     echo "✅ Frontend build completed with version $BUILD_VERSION"
 else
@@ -41,7 +41,7 @@ else
 
     # Run electron-builder with explicit no publishing
     echo "📦 Running electron-builder..."
-    yarn electron-builder --linux --win --publish=never
+    yarn electron-builder --linux --win --mac --publish=never
 
     echo "✅ Frontend build completed"
 fi

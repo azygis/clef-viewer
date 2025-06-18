@@ -12,7 +12,7 @@ UpgradeBehavior: install
 Installers:
     - Architecture: x64
       InstallerType: nullsoft
-      InstallerUrl: https://github.com/azygis/clef-viewer/releases/download/v1.0.0/clef-viewer-1.0.0-setup.exe
+      InstallerUrl: https://github.com/azygis/clef-viewer/releases/download/v1.0.0/clef-viewer-1.0.0-windows-x64-setup.exe
       InstallerSha256: __INSTALLER_SHA256__
       InstallerSwitches:
           Silent: /S

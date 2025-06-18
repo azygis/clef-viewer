@@ -37,7 +37,7 @@ echo "📦 Publishing backend for Linux x64..."
 dotnet publish ./backend/ClefViewer/ClefViewer.API/ClefViewer.API.csproj \
     --no-restore \
     --runtime linux-x64 \
-    --output ./publish/linux \
+    --output ./publish/linux-x64 \
     --self-contained \
     -p:PublishTrimmed=true \
     $VERSION_PROPS
@@ -46,7 +46,25 @@ echo "📦 Publishing backend for Windows x64..."
 dotnet publish ./backend/ClefViewer/ClefViewer.API/ClefViewer.API.csproj \
     --no-restore \
     --runtime win-x64 \
-    --output ./publish/win \
+    --output ./publish/win-x64 \
+    --self-contained \
+    -p:PublishTrimmed=true \
+    $VERSION_PROPS
+
+echo "📦 Publishing backend for macOS x64..."
+dotnet publish ./backend/ClefViewer/ClefViewer.API/ClefViewer.API.csproj \
+    --no-restore \
+    --runtime osx-x64 \
+    --output ./publish/mac-x64 \
+    --self-contained \
+    -p:PublishTrimmed=true \
+    $VERSION_PROPS
+
+echo "📦 Publishing backend for macOS ARM64..."
+dotnet publish ./backend/ClefViewer/ClefViewer.API/ClefViewer.API.csproj \
+    --no-restore \
+    --runtime osx-arm64 \
+    --output ./publish/mac-arm64 \
     --self-contained \
     -p:PublishTrimmed=true \
     $VERSION_PROPS

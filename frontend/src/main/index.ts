@@ -13,7 +13,7 @@ function createWindow(): void {
         height: 670,
         show: false,
         autoHideMenuBar: true,
-        ...(process.platform === 'linux' ? { icon } : {}),
+        ...(process.platform === 'linux' || process.platform === 'darwin' ? { icon } : {}),
         webPreferences: {
             preload: join(__dirname, '../preload/index.js'),
             nodeIntegration: true,
@@ -64,7 +64,17 @@ app.whenReady().then(() => {
 
 // Quit when all windows are closed
 app.on('window-all-closed', () => {
-    app.quit();
+    // On macOS, applications and their menu bar stay active until explicitly quit
+    if (process.platform !== 'darwin') {
+        app.quit();
+    }
+});
+
+app.on('activate', () => {
+    // On macOS, re-create a window when dock icon is clicked and no other windows open
+    if (process.platform === 'darwin' && BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+    }
 });
 
 app.on('will-quit', () => {

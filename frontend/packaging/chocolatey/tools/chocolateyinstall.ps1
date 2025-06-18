@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 $packageName = 'clef-viewer'
 $toolsDir = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
-$url64 = 'https://github.com/azygis/clef-viewer/releases/download/v__VERSION__/clef-viewer-__VERSION__-setup.exe'
+$url64 = 'https://github.com/azygis/clef-viewer/releases/download/v__VERSION__/clef-viewer-__VERSION__-windows-x64-setup.exe'
 $checksum64 = '__CHECKSUM__'
 
 $packageArgs = @{

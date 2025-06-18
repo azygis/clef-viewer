@@ -134,11 +134,14 @@ jobs:
           ## Installation
 
           ### Windows
-          - **Installer** (recommended): Download the \`.exe\` installer
+          - **Installer** (recommended): Download the latest \`.exe\` installer
           - **Portable**: Download the portable \`.exe\` version
 
+          ### macOS
+          - **ZIP Archive**: Download the latest \`.zip\` file
+
           ### Linux
-          - **AppImage** (recommended): Download the \`.AppImage\` file
+          - **AppImage** (recommended): Download the latest \`.AppImage\` file
           - **Debian/Ubuntu**: Download the \`.deb\` package
           - **Fedora/RHEL/CentOS**: Download the \`.rpm\` package
           - **Portable**: Download the \`.tar.gz\` archive

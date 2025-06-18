@@ -22,9 +22,10 @@
         "postinstall": "electron-builder install-app-deps",
         "build:unpack": "yarn build && electron-builder --dir",
         "build:win": "yarn build && electron-builder --win",
+        "build:mac": "yarn build && electron-builder --mac",
         "build:linux": "yarn build && electron-builder --linux",
         "build:deb": "yarn build && electron-builder --linux deb",
-        "build:supported": "yarn build && electron-builder --linux --win"
+        "build:supported": "yarn build && electron-builder --linux --win --mac"
     },
     "dependencies": {
         "@dreamonkey/vue-signalr": "^1.2.0",

@@ -2,7 +2,7 @@
 
 A modern desktop application for viewing and analyzing **CLEF (Compact Log Event Format)** log files with advanced filtering, search, and visualization capabilities.
 
-![CLEF Viewer](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-blue)
+![CLEF Viewer](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Version](https://img.shields.io/github/v/release/azygis/clef-viewer)
 
@@ -47,6 +47,10 @@ CLEF (Compact Log Event Format) is a JSON-based log file format that's particula
 
 - **Installer** (recommended): Download the latest `.exe` installer
 - **Portable**: Download the portable `.exe` version
+
+### macOS
+
+- **ZIP Archive**: Download the latest `.zip` file
 
 ### Linux
 
