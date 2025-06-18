@@ -194,10 +194,23 @@ async function reloadChangedFiles() {
         <v-snackbar v-model="hasChangedFiles">
             Log files have been changed
             <template #actions>
-                <v-btn color="primary" :loading="isReloadingChanges" @click="reloadChangedFiles"
-                    >Reload</v-btn
-                >
-                <v-btn color="secondary" @click="clearChanges">Close</v-btn>
+                <div class="snackbar-actions">
+                    <v-btn
+                        color="primary"
+                        density="comfortable"
+                        variant="flat"
+                        :loading="isReloadingChanges"
+                        @click="reloadChangedFiles"
+                        >Reload</v-btn
+                    >
+                    <v-btn
+                        color="secondary"
+                        density="comfortable"
+                        variant="flat"
+                        @click="clearChanges"
+                        >Close</v-btn
+                    >
+                </div>
             </template>
         </v-snackbar>
     </v-container>
@@ -235,5 +248,10 @@ async function reloadChangedFiles() {
             }
         }
     }
+}
+
+.snackbar-actions {
+    display: flex;
+    gap: 8px;
 }
 </style>
