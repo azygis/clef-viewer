@@ -39,7 +39,6 @@ CLEF (Compact Log Event Format) is a JSON-based log file format that's particula
 
 - Modern, responsive UI built with Vue.js and Vuetify
 - Resizable columns and panels
-- Export filtered results
 
 ## 📦 Installation
 
@@ -67,10 +66,9 @@ CLEF (Compact Log Event Format) is a JSON-based log file format that's particula
 
 1. **Launch the application**
 2. **Open a CLEF file** using File → Open or drag & drop
-3. **Filter events** using the sidebar controls
+3. **Filter events** using the filter input and event properties
 4. **Search** for specific text or patterns
 5. **Inspect properties** by expanding log events
-6. **Export results** if needed
 
 ## 🛠️ Development
 
