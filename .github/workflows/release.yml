@@ -40,14 +40,41 @@ jobs:
         env:
           BUILD_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          chmod +x build.sh
+          chmod +x build*.sh
           ./build.sh
-
       - name: Calculate checksums
         working-directory: frontend
         run: |
+          # Fix permissions first (Docker creates files as root)
+          sudo chown -R $(whoami):$(whoami) dist/ || echo "⚠️  Could not fix permissions"
+
+          # Verify we have the dist directory
+          if [ ! -d "dist" ]; then
+            echo "❌ Error: dist directory not found"
+            echo "Available directories:"
+            ls -la
+            exit 1
+          fi
+
+          echo "📁 Files in dist directory:"
+          ls -la dist/
+
           cd dist
-          find . -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" -o -name "*.tar.gz" -o -name "*.zip" | xargs sha256sum > checksums.txt
+          rm -f checksums.txt
+          for file in *.exe *.AppImage *.deb *.rpm *.tar.gz *.zip; do
+            if [ -f "$file" ]; then
+              echo "Calculating checksum for: $file"
+              sha256sum "$file" >> checksums.txt
+            fi
+          done
+
+          if [ -f "checksums.txt" ]; then
+            echo "📋 Generated checksums:"
+            cat checksums.txt
+          else
+            echo "⚠️  No build artifacts found to checksum"
+            touch checksums.txt
+          fi
 
       - name: Upload Release Assets
         env:
@@ -55,19 +82,40 @@ jobs:
         run: |
           cd frontend/dist
 
+          # Check if we have any files to upload
+          FILES_TO_UPLOAD=0
+          for file in *.exe *.AppImage *.deb *.rpm *.tar.gz *.zip; do
+            if [ -f "$file" ]; then
+              FILES_TO_UPLOAD=$((FILES_TO_UPLOAD + 1))
+            fi
+          done
+
+          if [ $FILES_TO_UPLOAD -eq 0 ]; then
+            echo "❌ No build artifacts found to upload!"
+            echo "Available files in frontend/dist:"
+            ls -la
+            exit 1
+          fi
+
+          echo "📦 Found $FILES_TO_UPLOAD files to upload"
+
           # Upload all build artifacts to the release
           for file in *.exe *.AppImage *.deb *.rpm *.tar.gz *.zip; do
             if [ -f "$file" ]; then
-              echo "Uploading $file"
+              echo "📤 Uploading $file"
               gh release upload ${{ github.event.release.tag_name }} "$file" --clobber
             fi
           done
 
           # Upload checksums
           if [ -f "checksums.txt" ]; then
-            echo "Uploading checksums.txt"
+            echo "📤 Uploading checksums.txt"
             gh release upload ${{ github.event.release.tag_name }} "checksums.txt" --clobber
+          else
+            echo "⚠️  No checksums.txt file found"
           fi
+
+          echo "✅ All artifacts uploaded successfully"
 
       - name: Update release body with installation instructions
         env:
